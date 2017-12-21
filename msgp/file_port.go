@@ -16,7 +16,7 @@ type MarshalSizer interface {
 }
 
 func ReadFile(dst Unmarshaler, file *os.File) error {
-	if u, ok := dst.(Decodable); ok {
+	if u, ok := dst.(Decoder); ok {
 		return u.DecodeMsg(NewReader(file))
 	}
 
@@ -29,7 +29,7 @@ func ReadFile(dst Unmarshaler, file *os.File) error {
 }
 
 func WriteFile(src MarshalSizer, file *os.File) error {
-	if e, ok := src.(Encodable); ok {
+	if e, ok := src.(Encoder); ok {
 		w := NewWriter(file)
 		err := e.EncodeMsg(w)
 		if err == nil {

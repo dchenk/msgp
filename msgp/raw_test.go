@@ -8,8 +8,8 @@ import (
 
 // all standard interfaces
 type allifaces interface {
-	Encodable
-	Decodable
+	Encoder
+	Decoder
 	Marshaler
 	Unmarshaler
 	Sizer

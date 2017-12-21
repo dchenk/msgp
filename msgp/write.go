@@ -91,10 +91,10 @@ type Marshaler interface {
 	MarshalMsg([]byte) ([]byte, error)
 }
 
-// Encodable is the interface implemented
+// Encoder is the interface implemented
 // by types that know how to write themselves
 // as MessagePack using a *msgp.Writer.
-type Encodable interface {
+type Encoder interface {
 	EncodeMsg(*Writer) error
 }
 
@@ -133,8 +133,8 @@ func NewWriterSize(w io.Writer, sz int) *Writer {
 	}
 }
 
-// Encode encodes an Encodable to an io.Writer.
-func Encode(w io.Writer, e Encodable) error {
+// Encode encodes an Encoder to an io.Writer.
+func Encode(w io.Writer, e Encoder) error {
 	wr := NewWriter(w)
 	err := e.EncodeMsg(wr)
 	if err == nil {
@@ -610,7 +610,7 @@ func (mw *Writer) WriteTime(t time.Time) error {
 //  - A map of supported types (with string keys)
 //  - An array or slice of supported types
 //  - A pointer to a supported type
-//  - A type that satisfies the msgp.Encodable interface
+//  - A type that satisfies the msgp.Encoder interface
 //  - A type that satisfies the msgp.Extension interface
 func (mw *Writer) WriteIntf(v interface{}) error {
 	if v == nil {
@@ -620,7 +620,7 @@ func (mw *Writer) WriteIntf(v interface{}) error {
 
 	// preferred interfaces
 
-	case Encodable:
+	case Encoder:
 		return v.EncodeMsg(mw)
 	case Extension:
 		return mw.WriteExtension(v)
@@ -732,7 +732,7 @@ func (mw *Writer) writeSlice(v reflect.Value) (err error) {
 }
 
 func (mw *Writer) writeStruct(v reflect.Value) error {
-	if enc, ok := v.Interface().(Encodable); ok {
+	if enc, ok := v.Interface().(Encoder); ok {
 		return enc.EncodeMsg(mw)
 	}
 	return fmt.Errorf("msgp: unsupported type: %s", v.Type())

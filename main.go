@@ -14,7 +14,7 @@
 //
 //  -o = output file name (default is {input}_gen.go)
 //  -file = input file name (or directory; default is $GOFILE, which is set by the `go generate` command)
-//  -io = satisfy the `msgp.Decodable` and `msgp.Encodable` interfaces (default is true)
+//  -io = satisfy the `msgp.Decoder` and `msgp.Encoder` interfaces (default is true)
 //  -marshal = satisfy the `msgp.Marshaler` and `msgp.Unmarshaler` interfaces (default is true)
 //  -tests = generate tests and benchmarks (default is true)
 //

@@ -57,7 +57,7 @@ func (e *encodeGen) Execute(p Elem) error {
 		return nil
 	}
 
-	e.p.comment("EncodeMsg implements msgp.Encodable")
+	e.p.comment("EncodeMsg implements msgp.Encoder")
 
 	e.p.printf("\nfunc (%s %s) EncodeMsg(en *msgp.Writer) (err error) {", p.Varname(), imutMethodReceiver(p))
 	next(e, p)

@@ -92,15 +92,15 @@ type Unmarshaler interface {
 	UnmarshalMsg([]byte) ([]byte, error)
 }
 
-// Decodable is the interface fulfilled
+// Decoder is the interface fulfilled
 // by objects that know how to read
 // themselves from a *Reader.
-type Decodable interface {
+type Decoder interface {
 	DecodeMsg(*Reader) error
 }
 
 // Decode decodes 'd' from 'r'.
-func Decode(r io.Reader, d Decodable) error {
+func Decode(r io.Reader, d Decoder) error {
 	rd := NewReader(r)
 	err := d.DecodeMsg(rd)
 	freeR(rd)
