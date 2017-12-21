@@ -63,7 +63,7 @@ func HasKey(key string, raw []byte) bool {
 		if err != nil {
 			return false
 		}
-		if UnsafeString(field) == key {
+		if string(field) == key {
 			return true
 		}
 	}
@@ -130,7 +130,7 @@ func locate(raw []byte, key string) (start int, end int) {
 		if err != nil {
 			return 0, 0
 		}
-		if UnsafeString(field) == key {
+		if string(field) == key {
 			// start location
 			l := len(raw)
 			start = l - len(bts)
@@ -168,7 +168,7 @@ func locateKV(raw []byte, key string) (start int, end int) {
 		if err != nil {
 			return 0, 0
 		}
-		if UnsafeString(field) == key {
+		if string(field) == key {
 			start = len(raw) - tmp
 			bts, err = Skip(bts)
 			if err != nil {

@@ -999,7 +999,7 @@ func (m *Reader) ReadStringHeader() (sz uint32, err error) {
 	}
 }
 
-// ReadString reads a utf-8 string from the reader
+// ReadString reads a UTF-8 string from the reader.
 func (m *Reader) ReadString() (s string, err error) {
 	var p []byte
 	var lead byte
@@ -1066,11 +1066,11 @@ fill:
 	if err != nil {
 		return
 	}
-	s = UnsafeString(out)
+	s = string(out)
 	return
 }
 
-// ReadComplex64 reads a complex64 from the reader
+// ReadComplex64 reads a complex64 from the reader.
 func (m *Reader) ReadComplex64() (f complex64, err error) {
 	var p []byte
 	p, err = m.R.Peek(10)
@@ -1091,7 +1091,7 @@ func (m *Reader) ReadComplex64() (f complex64, err error) {
 	return
 }
 
-// ReadComplex128 reads a complex128 from the reader
+// ReadComplex128 reads a complex128 from the reader.
 func (m *Reader) ReadComplex128() (f complex128, err error) {
 	var p []byte
 	p, err = m.R.Peek(18)

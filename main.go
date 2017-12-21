@@ -45,6 +45,7 @@ var (
 )
 
 func main() {
+
 	flag.Parse()
 
 	// GOFILE is set by go generate
@@ -76,6 +77,7 @@ func main() {
 		fmt.Println(chalk.Red.Color(err.Error()))
 		os.Exit(1)
 	}
+
 }
 
 // Run writes all methods using the associated file or path, e.g.
@@ -101,8 +103,9 @@ func Run(gofile string, mode gen.Method, unexported bool) error {
 	return printer.PrintFile(newFilename(gofile, fs.Package), fs, mode)
 }
 
-// picks a new file name based on input flags and input filename(s).
+// newFilename picks a new file name based on input flags and input file names.
 func newFilename(old string, pkg string) string {
+
 	if *out != "" {
 		if pre := strings.TrimPrefix(*out, old); len(pre) > 0 &&
 			!strings.HasSuffix(*out, ".go") {
@@ -114,6 +117,8 @@ func newFilename(old string, pkg string) string {
 	if fi, err := os.Stat(old); err == nil && fi.IsDir() {
 		old = filepath.Join(old, pkg)
 	}
+
 	// new file name is old file name + _gen.go
 	return strings.TrimSuffix(old, ".go") + "_gen.go"
+
 }
