@@ -2,10 +2,11 @@ package _generated
 
 import (
 	"bytes"
-	"github.com/tinylib/msgp/msgp"
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/dchenk/msgp/msgp"
 )
 
 // benchmark encoding a small, "fast" type.
