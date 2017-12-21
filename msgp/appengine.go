@@ -2,14 +2,5 @@
 
 package msgp
 
-// let's just assume appengine
-// uses 64-bit hardware...
+// Because we can't use package unsafe on AppEngine, let's assume the apps run on 64-bit hardware.
 const smallint = false
-
-func UnsafeString(b []byte) string {
-	return string(b)
-}
-
-func UnsafeBytes(s string) []byte {
-	return []byte(s)
-}

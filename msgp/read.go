@@ -92,15 +92,15 @@ type Unmarshaler interface {
 	UnmarshalMsg([]byte) ([]byte, error)
 }
 
-// Decodable is the interface fulfilled
+// Decoder is the interface fulfilled
 // by objects that know how to read
 // themselves from a *Reader.
-type Decodable interface {
+type Decoder interface {
 	DecodeMsg(*Reader) error
 }
 
 // Decode decodes 'd' from 'r'.
-func Decode(r io.Reader, d Decodable) error {
+func Decode(r io.Reader, d Decoder) error {
 	rd := NewReader(r)
 	err := d.DecodeMsg(rd)
 	freeR(rd)
@@ -999,7 +999,7 @@ func (m *Reader) ReadStringHeader() (sz uint32, err error) {
 	}
 }
 
-// ReadString reads a utf-8 string from the reader
+// ReadString reads a UTF-8 string from the reader.
 func (m *Reader) ReadString() (s string, err error) {
 	var p []byte
 	var lead byte
@@ -1066,11 +1066,11 @@ fill:
 	if err != nil {
 		return
 	}
-	s = UnsafeString(out)
+	s = string(out)
 	return
 }
 
-// ReadComplex64 reads a complex64 from the reader
+// ReadComplex64 reads a complex64 from the reader.
 func (m *Reader) ReadComplex64() (f complex64, err error) {
 	var p []byte
 	p, err = m.R.Peek(10)
@@ -1091,7 +1091,7 @@ func (m *Reader) ReadComplex64() (f complex64, err error) {
 	return
 }
 
-// ReadComplex128 reads a complex128 from the reader
+// ReadComplex128 reads a complex128 from the reader.
 func (m *Reader) ReadComplex128() (f complex128, err error) {
 	var p []byte
 	p, err = m.R.Peek(18)

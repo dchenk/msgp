@@ -100,7 +100,7 @@ func (n *Number) Type() Type {
 	return n.typ
 }
 
-// DecodeMsg implements msgp.Decodable
+// DecodeMsg implements msgp.Decoder
 func (n *Number) DecodeMsg(r *Reader) error {
 	typ, err := r.NextType()
 	if err != nil {
@@ -193,7 +193,7 @@ func (n *Number) MarshalMsg(b []byte) ([]byte, error) {
 	}
 }
 
-// EncodeMsg implements msgp.Encodable
+// EncodeMsg implements msgp.Encoder
 func (n *Number) EncodeMsg(w *Writer) error {
 	switch n.typ {
 	case IntType:

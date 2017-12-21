@@ -83,14 +83,14 @@ func strtoMeth(s string) Method {
 }
 
 const (
-	Decode      Method                       = 1 << iota // msgp.Decodable
-	Encode                                               // msgp.Encodable
+	Decode      Method                       = 1 << iota // msgp.Decoder
+	Encode                                               // msgp.Encoder
 	Marshal                                              // msgp.Marshaler
 	Unmarshal                                            // msgp.Unmarshaler
 	Size                                                 // msgp.Sizer
 	Test                                                 // generate tests
 	invalidmeth                                          // this isn't a method
-	encodetest  = Encode | Decode | Test                 // tests for Encodable and Decodable
+	encodetest  = Encode | Decode | Test                 // tests for Encoder and Decoder
 	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
 )
 

@@ -14,11 +14,11 @@
 //
 //  -o = output file name (default is {input}_gen.go)
 //  -file = input file name (or directory; default is $GOFILE, which is set by the `go generate` command)
-//  -io = satisfy the `msgp.Decodable` and `msgp.Encodable` interfaces (default is true)
+//  -io = satisfy the `msgp.Decoder` and `msgp.Encoder` interfaces (default is true)
 //  -marshal = satisfy the `msgp.Marshaler` and `msgp.Unmarshaler` interfaces (default is true)
 //  -tests = generate tests and benchmarks (default is true)
 //
-// For more information, please read README.md, and the wiki at github.com/tinylib/msgp
+// For more information, please read README.md, and the wiki at github.com/dchenk/msgp
 //
 package main
 
@@ -29,9 +29,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/tinylib/msgp/gen"
-	"github.com/tinylib/msgp/parse"
-	"github.com/tinylib/msgp/printer"
+	"github.com/dchenk/msgp/gen"
+	"github.com/dchenk/msgp/parse"
+	"github.com/dchenk/msgp/printer"
 	"github.com/ttacon/chalk"
 )
 
@@ -45,6 +45,7 @@ var (
 )
 
 func main() {
+
 	flag.Parse()
 
 	// GOFILE is set by go generate
@@ -76,6 +77,7 @@ func main() {
 		fmt.Println(chalk.Red.Color(err.Error()))
 		os.Exit(1)
 	}
+
 }
 
 // Run writes all methods using the associated file or path, e.g.
@@ -101,8 +103,9 @@ func Run(gofile string, mode gen.Method, unexported bool) error {
 	return printer.PrintFile(newFilename(gofile, fs.Package), fs, mode)
 }
 
-// picks a new file name based on input flags and input filename(s).
+// newFilename picks a new file name based on input flags and input file names.
 func newFilename(old string, pkg string) string {
+
 	if *out != "" {
 		if pre := strings.TrimPrefix(*out, old); len(pre) > 0 &&
 			!strings.HasSuffix(*out, ".go") {
@@ -114,6 +117,8 @@ func newFilename(old string, pkg string) string {
 	if fi, err := os.Stat(old); err == nil && fi.IsDir() {
 		old = filepath.Join(old, pkg)
 	}
+
 	// new file name is old file name + _gen.go
 	return strings.TrimSuffix(old, ".go") + "_gen.go"
+
 }

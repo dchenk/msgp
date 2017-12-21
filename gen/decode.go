@@ -42,7 +42,7 @@ func (d *decodeGen) Execute(p Elem) error {
 		return nil
 	}
 
-	d.p.comment("DecodeMsg implements msgp.Decodable")
+	d.p.comment("DecodeMsg implements msgp.Decoder")
 
 	d.p.printf("\nfunc (%s %s) DecodeMsg(dc *msgp.Reader) (err error) {", p.Varname(), methodReceiver(p))
 	next(d, p)
@@ -94,7 +94,7 @@ func (d *decodeGen) structAsMap(s *Struct) {
 
 	d.p.printf("\nfor %s > 0 {\n%s--", sz, sz)
 	d.assignAndCheck("field", mapKey)
-	d.p.print("\nswitch msgp.UnsafeString(field) {")
+	d.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
 		d.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
 		next(d, s.Fields[i].FieldElem)
