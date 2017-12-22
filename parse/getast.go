@@ -14,8 +14,7 @@ import (
 	"github.com/ttacon/chalk"
 )
 
-// A FileSet is the in-memory representation of a
-// parsed file.
+// A FileSet is the in-memory representation of a parsed file.
 type FileSet struct {
 	Package    string              // package name
 	Specs      map[string]ast.Expr // type specs in file
