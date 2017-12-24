@@ -7,25 +7,24 @@ import (
 
 func decode(w io.Writer) *decodeGen {
 	return &decodeGen{
-		p:        printer{w: w},
-		hasfield: false,
+		p: printer{w: w},
 	}
 }
 
 type decodeGen struct {
 	passes
 	p        printer
-	hasfield bool
+	hasField bool
 }
 
 func (d *decodeGen) Method() Method { return Decode }
 
 func (d *decodeGen) needsField() {
-	if d.hasfield {
+	if d.hasField {
 		return
 	}
 	d.p.print("\nvar field []byte; _ = field")
-	d.hasfield = true
+	d.hasField = true
 }
 
 func (d *decodeGen) Execute(p Elem) error {
@@ -33,12 +32,12 @@ func (d *decodeGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	d.hasfield = false
+	d.hasField = false
 	if !d.p.ok() {
 		return d.p.err
 	}
 
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
@@ -104,11 +103,12 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	}
 	d.p.print("\ndefault:\nerr = dc.Skip()")
 	d.p.print(errcheck)
-	d.p.closeblock() // close switch
-	d.p.closeblock() // close for loop
+	d.p.closeBlock() // close switch
+	d.p.closeBlock() // close for loop
 }
 
 func (d *decodeGen) gBase(b *BaseElem) {
+
 	if !d.p.ok() {
 		return
 	}
@@ -123,8 +123,7 @@ func (d *decodeGen) gBase(b *BaseElem) {
 	vname := b.Varname()  // e.g. "z.FieldOne"
 	bname := b.BaseName() // e.g. "Float64"
 
-	// handle special cases
-	// for object type.
+	// Handle special cases for object type.
 	switch b.Value {
 	case Bytes:
 		if b.Convert {
@@ -154,6 +153,7 @@ func (d *decodeGen) gBase(b *BaseElem) {
 			d.p.print(errcheck)
 		}
 	}
+
 }
 
 func (d *decodeGen) gMap(m *Map) {
@@ -175,7 +175,7 @@ func (d *decodeGen) gMap(m *Map) {
 	d.assignAndCheck(m.Keyidx, stringTyp)
 	next(d, m.Value)
 	d.p.mapAssign(m)
-	d.p.closeblock()
+	d.p.closeBlock()
 }
 
 func (d *decodeGen) gSlice(s *Slice) {
@@ -218,5 +218,5 @@ func (d *decodeGen) gPtr(p *Ptr) {
 	d.p.printf("\n%s = nil\n} else {", p.Varname())
 	d.p.initPtr(p)
 	next(d, p.Value)
-	d.p.closeblock()
+	d.p.closeBlock()
 }

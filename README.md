@@ -20,13 +20,13 @@ In a source file, include the following directive:
 //go:generate msgp
 ```
 
-The `msgp` command will generate serialization methods for all exported type declarations in the file.
+The `msgp` command will generate serialization and deserialization methods for all exported type declarations in the file.
 
 You can [read more about the code generation options here](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator).
 
 ### Use
 
-Field names can be set in much the same way as the `encoding/json` package. For example:
+Field names can be set in much the same way as with the `encoding/json` package. For example:
 
 ```go
 type Person struct {
@@ -42,10 +42,9 @@ By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encoder`, `msgp.
 and `msgp.Unmarshaler`. Carefully-designed applications can use these methods to do marshalling/unmarshalling
 with zero heap allocations.
 
-While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's
-`json.Marshaler` and `json.Unmarshaler`, `msgp.Encoder` and `msgp.Decoder` are useful for 
-stream serialization. (`*msgp.Writer` and `*msgp.Reader` are essentially protocol-aware versions
-of `*bufio.Writer` and `*bufio.Reader`, respectively.)
+While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's`json.Marshaler`
+and `json.Unmarshaler`, `msgp.Encoder` and `msgp.Decoder` are useful for stream serialization.
+(`*msgp.Writer` and `*msgp.Reader` are essentially protocol-aware versions of `*bufio.Writer` and `*bufio.Reader`.)
 
 ### Features
 
@@ -106,8 +105,8 @@ this repository takes the project in a new direction.
 
 Differences between this tool and tinylib/msgp:
 - Here we have regular expression matching for type names in directives.
-- Here we do not use package `unsafe` for conversions to or from strings and byte slices: `[]byte` is converted
-to `string` simply with the native `string()`, and `string` to `[]byte` with `[]byte()`.
-- This codebase is refactored to be more Go-idiomatic and, hopefully, more inviting to contributors.
+- Here we do not use package `unsafe` for conversions from byte slices to strings: `[]byte` is converted efficiently
+to `string` simply with the built-in `string()`.
+- This codebase is thoroughly refactored to be more Go-idiomatic, efficient, and inviting to contributors.
 
 Additionally, in this library we plan to add an `omitempty` feature, like what `encoding/json` has.

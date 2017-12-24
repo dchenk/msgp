@@ -15,7 +15,7 @@ func resetIdent(prefix string) {
 	identNext = 0
 }
 
-// generate a random identifier name
+// randIdent generates a random identifier name.
 func randIdent() string {
 	identNext++
 	return fmt.Sprintf("%s%04d", identPrefix, identNext)
@@ -25,49 +25,46 @@ func randIdent() string {
 //
 // Consider the following:
 //
-// type Marshaler struct {
-// 	  Thing1 *float64 `msg:"thing1"`
-// 	  Body   []byte   `msg:"body"`
-// }
+//  type Marshaler struct {
+//  	Thing1 *float64 `msg:"thing1"`
+// 		Body   []byte   `msg:"body"`
+//  }
 //
-// A parser using this generator as a backend
-// should parse the above into:
+// A parser should parse the above into:
 //
-// var val Elem = &Ptr{
-// 	name: "z",
-// 	Value: &Struct{
-// 		Name: "Marshaler",
-// 		Fields: []StructField{
-// 			{
-// 				FieldTag: "thing1",
-// 				FieldElem: &Ptr{
-// 					name: "z.Thing1",
-// 					Value: &BaseElem{
-// 						name:    "*z.Thing1",
-// 						Value:   Float64,
-//						Convert: false,
+//  var val Elem = &Ptr{
+// 		name: "z",
+// 		Value: &Struct{
+// 			Name: "Marshaler",
+// 			Fields: []StructField{
+// 				{
+// 					FieldTag: "thing1",
+// 					FieldElem: &Ptr{
+// 						name: "z.Thing1",
+// 						Value: &BaseElem{
+// 							name:    "*z.Thing1",
+// 							Value:   Float64,
+//							Convert: false,
+// 						},
+// 					},
+// 				},
+// 				{
+// 					FieldTag: "body",
+// 						FieldElem: &BaseElem{
+// 						name:    "z.Body",
+// 						Value:   Bytes,
+// 						Convert: false,
 // 					},
 // 				},
 // 			},
-// 			{
-// 				FieldTag: "body",
-// 				FieldElem: &BaseElem{
-// 					name:    "z.Body",
-// 					Value:   Bytes,
-// 					Convert: false,
-// 				},
-// 			},
 // 		},
-// 	},
-// }
+//  }
 
-// Base is one of the
-// base types
+// A Primitive is a basic type to msgp.
 type Primitive uint8
 
-// this is effectively the
-// list of currently available
-// ReadXxxx / WriteXxxx methods.
+// This list of Primitive types is effectively the list of types
+// currently having ReadXxxx and WriteXxxx methods.
 const (
 	Invalid Primitive = iota
 	Bytes
@@ -95,8 +92,59 @@ const (
 	IDENT // IDENT means an unrecognized identifier
 )
 
-// all of the recognized identities
-// that map to primitive types
+func (k Primitive) String() string {
+	switch k {
+	case String:
+		return "String"
+	case Bytes:
+		return "Bytes"
+	case Float32:
+		return "Float32"
+	case Float64:
+		return "Float64"
+	case Complex64:
+		return "Complex64"
+	case Complex128:
+		return "Complex128"
+	case Uint:
+		return "Uint"
+	case Uint8:
+		return "Uint8"
+	case Uint16:
+		return "Uint16"
+	case Uint32:
+		return "Uint32"
+	case Uint64:
+		return "Uint64"
+	case Byte:
+		return "Byte"
+	case Int:
+		return "Int"
+	case Int8:
+		return "Int8"
+	case Int16:
+		return "Int16"
+	case Int32:
+		return "Int32"
+	case Int64:
+		return "Int64"
+	case Bool:
+		return "Bool"
+	case Intf:
+		return "Intf"
+	case Time:
+		return "time.Time"
+	case Ext:
+		return "Extension"
+	case IDENT:
+		return "Ident"
+	default:
+		return "INVALID"
+	}
+}
+
+// primitives lists all of the recognized identities that have
+// a corresponding Primitive type.
 var primitives = map[string]Primitive{
 	"[]byte":         Bytes,
 	"string":         String,
@@ -122,10 +170,9 @@ var primitives = map[string]Primitive{
 	"msgp.Extension": Ext,
 }
 
-// types built into the library
-// that satisfy all of the
-// interfaces.
-var builtins = map[string]struct{}{
+// builtIns are types built into the library
+// that satisfy all of the interfaces.
+var builtIns = map[string]struct{}{
 	"msgp.Raw":    struct{}{},
 	"msgp.Number": struct{}{},
 }
@@ -136,53 +183,41 @@ type common struct{ vname, alias string }
 func (c *common) SetVarname(s string) { c.vname = s }
 func (c *common) Varname() string     { return c.vname }
 func (c *common) Alias(typ string)    { c.alias = typ }
-func (c *common) hidden()             {}
 
-func IsPrintable(e Elem) bool {
+func isPrintable(e Elem) bool {
 	if be, ok := e.(*BaseElem); ok && !be.Printable() {
 		return false
 	}
 	return true
 }
 
-// Elem is a go type capable of being
-// serialized into MessagePack. It is
-// implemented by *Ptr, *Struct, *Array,
-// *Slice, *Map, and *BaseElem.
+// An Elem is a Go type capable of being serialized into MessagePack.
+// It is implemented by *Ptr, *Struct, *Array, *Slice, *Map, and *BaseElem.
 type Elem interface {
-	// SetVarname sets this nodes
-	// variable name and recursively
-	// sets the names of all its children.
-	// In general, this should only be
-	// called on the parent of the tree.
+	// SetVarname sets this node's variable name and recursively
+	// sets the names of all its children. In general, this
+	// should only be called on the parent of the tree.
 	SetVarname(s string)
 
-	// Varname returns the variable
-	// name of the element.
+	// Varname returns the variable name of the element.
 	Varname() string
 
-	// TypeName is the canonical
-	// go type name of the node
-	// e.g. "string", "int", "map[string]float64"
-	// OR the alias name, if it has been set.
+	// TypeName is the canonical Go type name of the node, such as "string",
+	// "int", "map[string]float64" OR the alias name, if it has been set.
 	TypeName() string
 
-	// Alias sets a type (alias) name
+	// Alias sets a type (alias) name.
 	Alias(typ string)
 
-	// Copy should perform a deep copy of the object
+	// Copy performs a deep copy of the object.
 	Copy() Elem
 
-	// Complexity returns a measure of the
-	// complexity of element (greater than
-	// or equal to 1.)
+	// Complexity returns a measure of the complexity of the element (greater
+	// than or equal to 1).
 	Complexity() int
-
-	hidden()
 }
 
-// Ident returns the *BaseElem that corresponds
-// to the provided identity.
+// Ident returns the *BaseElem that corresponds to the provided identity.
 func Ident(id string) *BaseElem {
 	p, ok := primitives[id]
 	if ok {
@@ -201,17 +236,18 @@ type Array struct {
 }
 
 func (a *Array) SetVarname(s string) {
+
 	a.common.SetVarname(s)
 ridx:
 	a.Index = randIdent()
 
-	// try to avoid using the same
-	// index as a parent slice
+	// Try to avoid using the same index as a parent slice.
 	if strings.Contains(a.Varname(), a.Index) {
 		goto ridx
 	}
 
 	a.Els.SetVarname(fmt.Sprintf("%s[%s]", a.Varname(), a.Index))
+
 }
 
 func (a *Array) TypeName() string {
@@ -415,9 +451,7 @@ const (
 	Convert
 )
 
-// BaseElem is an element that
-// can be represented by a primitive
-// MessagePack type.
+// A BaseElem is an element that can be represented by a primitive MessagePack type.
 type BaseElem struct {
 	common
 	ShimMode     ShimMode  // Method used to shim
@@ -442,9 +476,8 @@ func (s *BaseElem) Alias(typ string) {
 }
 
 func (s *BaseElem) SetVarname(a string) {
-	// extensions whose parents
-	// are not pointers need to
-	// be explicitly referenced
+	// Ext types whose parents are not pointers need
+	// to be explicitly referenced.
 	if s.Value == Ext || s.needsref {
 		if strings.HasPrefix(a, "*") {
 			s.common.SetVarname(a[1:])
@@ -457,8 +490,7 @@ func (s *BaseElem) SetVarname(a string) {
 	s.common.SetVarname(a)
 }
 
-// TypeName returns the syntactically correct Go
-// type name for the base element.
+// TypeName returns the syntactically correct Go type name for the base element.
 func (s *BaseElem) TypeName() string {
 	if s.common.alias != "" {
 		return s.common.alias
@@ -468,19 +500,23 @@ func (s *BaseElem) TypeName() string {
 }
 
 // ToBase, used if Convert==true, is used as tmp = {{ToBase}}({{Varname}})
-func (s *BaseElem) ToBase() string {
-	if s.ShimToBase != "" {
-		return s.ShimToBase
+func (b *BaseElem) ToBase() string {
+	if b.ShimToBase != "" {
+		return b.ShimToBase
 	}
-	return s.BaseType()
+	return b.BaseType()
 }
 
 // FromBase, used if Convert==true, is used as {{Varname}} = {{FromBase}}(tmp)
-func (s *BaseElem) FromBase() string {
-	if s.ShimFromBase != "" {
-		return s.ShimFromBase
+func (b *BaseElem) FromBase() string {
+	if b.ShimFromBase != "" {
+		return b.ShimFromBase
 	}
-	return s.TypeName()
+	return b.TypeName()
+}
+
+func (b *BaseElem) toBaseConvert() string {
+	return b.ToBase() + "(" + b.Varname() + ")"
 }
 
 // BaseName returns the string form of the
@@ -536,71 +572,17 @@ func (s *BaseElem) Complexity() int {
 	return 1
 }
 
-// Resolved returns whether or not
-// the type of the element is
-// a primitive or a builtin provided
-// by the package.
+// Resolved says whether or not the type of the element is a primitive
+// or a builtin provided by the package.
 func (s *BaseElem) Resolved() bool {
 	if s.Value == IDENT {
-		_, ok := builtins[s.TypeName()]
+		_, ok := builtIns[s.TypeName()]
 		return ok
 	}
 	return true
 }
 
-func (k Primitive) String() string {
-	switch k {
-	case String:
-		return "String"
-	case Bytes:
-		return "Bytes"
-	case Float32:
-		return "Float32"
-	case Float64:
-		return "Float64"
-	case Complex64:
-		return "Complex64"
-	case Complex128:
-		return "Complex128"
-	case Uint:
-		return "Uint"
-	case Uint8:
-		return "Uint8"
-	case Uint16:
-		return "Uint16"
-	case Uint32:
-		return "Uint32"
-	case Uint64:
-		return "Uint64"
-	case Byte:
-		return "Byte"
-	case Int:
-		return "Int"
-	case Int8:
-		return "Int8"
-	case Int16:
-		return "Int16"
-	case Int32:
-		return "Int32"
-	case Int64:
-		return "Int64"
-	case Bool:
-		return "Bool"
-	case Intf:
-		return "Intf"
-	case Time:
-		return "time.Time"
-	case Ext:
-		return "Extension"
-	case IDENT:
-		return "Ident"
-	default:
-		return "INVALID"
-	}
-}
-
-// writeStructFields is a trampoline for writeBase for
-// all of the fields in a struct
+// writeStructFields is a trampoline for writeBase for all of the fields in a struct.
 func writeStructFields(s []StructField, name string) {
 	for i := range s {
 		s[i].FieldElem.SetVarname(fmt.Sprintf("%s.%s", name, s[i].FieldName))
@@ -608,12 +590,10 @@ func writeStructFields(s []StructField, name string) {
 }
 
 // coerceArraySize ensures we can compare constant array lengths.
-//
-// msgpack array headers are 32 bit unsigned, which is reflected in the
-// ArrayHeader implementation in this library using uint32. On the Go side, we
-// can declare array lengths as any constant integer width, which breaks when
-// attempting a direct comparison to an array header's uint32.
-//
+// MessagePack array headers are (up to) 32 bit unsigned, which is reflected in the
+// ArrayHeader implementation in this library using uint32. On the Go side, we can
+// declare array lengths as any constant integer width, which breaks when attempting
+// a direct comparison to an array header's uint32.
 func coerceArraySize(asz string) string {
 	return fmt.Sprintf("uint32(%s)", asz)
 }

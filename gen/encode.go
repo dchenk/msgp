@@ -46,6 +46,7 @@ func (e *encodeGen) Fuse(b []byte) {
 }
 
 func (e *encodeGen) Execute(p Elem) error {
+
 	if !e.p.ok() {
 		return e.p.err
 	}
@@ -53,7 +54,7 @@ func (e *encodeGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
@@ -63,6 +64,7 @@ func (e *encodeGen) Execute(p Elem) error {
 	next(e, p)
 	e.p.nakedReturn()
 	return e.p.err
+
 }
 
 func (e *encodeGen) gStruct(s *Struct) {
@@ -134,7 +136,7 @@ func (e *encodeGen) gMap(m *Map) {
 	e.p.printf("\nfor %s, %s := range %s {", m.Keyidx, m.Validx, vname)
 	e.writeAndCheck(stringTyp, literalFmt, m.Keyidx)
 	next(e, m.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gPtr(s *Ptr) {
@@ -144,7 +146,7 @@ func (e *encodeGen) gPtr(s *Ptr) {
 	e.fuseHook()
 	e.p.printf("\nif %s == nil { err = en.WriteNil(); if err != nil { return; } } else {", s.Varname())
 	next(e, s.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gSlice(s *Slice) {
@@ -180,11 +182,11 @@ func (e *encodeGen) gBase(b *BaseElem) {
 	vname := b.Varname()
 	if b.Convert {
 		if b.ShimMode == Cast {
-			vname = tobaseConvert(b)
+			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
 			e.p.printf("\nvar %s %s", vname, b.BaseType())
-			e.p.printf("\n%s, err = %s", vname, tobaseConvert(b))
+			e.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			e.p.printf(errcheck)
 		}
 	}
