@@ -139,7 +139,7 @@ func (m *marshalGen) gMap(s *Map) {
 	m.p.printf("\nfor %s, %s := range %s {", s.Keyidx, s.Validx, vname)
 	m.rawAppend(stringTyp, literalFmt, s.Keyidx)
 	next(m, s.Value)
-	m.p.closeblock()
+	m.p.closeBlock()
 }
 
 func (m *marshalGen) gSlice(s *Slice) {
@@ -173,7 +173,7 @@ func (m *marshalGen) gPtr(p *Ptr) {
 	m.fuseHook()
 	m.p.printf("\nif %s == nil {\no = msgp.AppendNil(o)\n} else {", p.Varname())
 	next(m, p.Value)
-	m.p.closeblock()
+	m.p.closeBlock()
 }
 
 func (m *marshalGen) gBase(b *BaseElem) {

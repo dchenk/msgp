@@ -104,8 +104,8 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	}
 	d.p.print("\ndefault:\nerr = dc.Skip()")
 	d.p.print(errcheck)
-	d.p.closeblock() // close switch
-	d.p.closeblock() // close for loop
+	d.p.closeBlock() // close switch
+	d.p.closeBlock() // close for loop
 }
 
 func (d *decodeGen) gBase(b *BaseElem) {
@@ -175,7 +175,7 @@ func (d *decodeGen) gMap(m *Map) {
 	d.assignAndCheck(m.Keyidx, stringTyp)
 	next(d, m.Value)
 	d.p.mapAssign(m)
-	d.p.closeblock()
+	d.p.closeBlock()
 }
 
 func (d *decodeGen) gSlice(s *Slice) {
@@ -218,5 +218,5 @@ func (d *decodeGen) gPtr(p *Ptr) {
 	d.p.printf("\n%s = nil\n} else {", p.Varname())
 	d.p.initPtr(p)
 	next(d, p.Value)
-	d.p.closeblock()
+	d.p.closeBlock()
 }

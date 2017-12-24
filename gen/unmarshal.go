@@ -194,12 +194,12 @@ func (u *unmarshalGen) gMap(m *Map) {
 	u.assignAndCheck(m.Keyidx, stringTyp)
 	next(u, m.Value)
 	u.p.mapAssign(m)
-	u.p.closeblock()
+	u.p.closeBlock()
 }
 
 func (u *unmarshalGen) gPtr(p *Ptr) {
 	u.p.printf("\nif msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname())
 	u.p.initPtr(p)
 	next(u, p.Value)
-	u.p.closeblock()
+	u.p.closeBlock()
 }

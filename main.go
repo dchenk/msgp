@@ -208,7 +208,7 @@ func generate(f *parse.FileSet, mode gen.Method) (*bytes.Buffer, *bytes.Buffer, 
 		writeImportHeader(testsBuf, neededImports)
 	}
 
-	return mainBuf, testsBuf, f.PrintTo(gen.NewPrinter(mode, mainBuf, testsBuf))
+	return mainBuf, testsBuf, f.PrintTo(gen.NewGeneratorSet(mode, mainBuf, testsBuf))
 
 }
 

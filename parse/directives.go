@@ -13,8 +13,8 @@ const linePrefix = "//msgp:"
 // func(args, fileset)
 type directive func([]string, *FileSet) error
 
-// func(passName, args, printer)
-type passDirective func(gen.Method, []string, *gen.Printer) error
+// func(passName, args, GeneratorSet)
+type passDirective func(gen.Method, []string, gen.GeneratorSet) error
 
 // map of all recognized directives
 //
@@ -32,11 +32,11 @@ var passDirectives = map[string]passDirective{
 	"ignore": passignore,
 }
 
-func passignore(m gen.Method, typeNamePatterns []string, p *gen.Printer) error {
+func passignore(m gen.Method, typeNamePatterns []string, gs gen.GeneratorSet) error {
 	pushstate(m.String())
-	for _, a := range typeNamePatterns {
-		p.ApplyDirective(m, gen.IgnoreTypename(a))
-		infof("ignoring %s\n", a)
+	for _, tn := range typeNamePatterns {
+		gs.ApplyDirective(m, gen.IgnoreTypename(tn))
+		infof("ignoring %s\n", tn)
 	}
 	popstate()
 	return nil

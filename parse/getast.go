@@ -23,13 +23,12 @@ type FileSet struct {
 	Imports    []*ast.ImportSpec   // imports
 }
 
-// File parses a file at the relative path
-// provided and produces a new *FileSet.
-// If you pass in a path to a directory, the entire
-// directory will be parsed.
-// If unexport is false, only exported identifiers are included in the FileSet.
+// File parses a file at the relative path provided and produces a new *FileSet.
+// If you pass in a path to a directory, the entire directory will be parsed.
+// If unexported is false, only exported identifiers are included in the FileSet.
 // If the resulting FileSet would be empty, an error is returned.
 func File(name string, unexported bool) (*FileSet, error) {
+
 	pushstate(name)
 	defer popstate()
 	fs := &FileSet{
@@ -87,6 +86,7 @@ func File(name string, unexported bool) (*FileSet, error) {
 	fs.propInline()
 
 	return fs, nil
+
 }
 
 // applyDirectives applies all of the directives that
@@ -212,7 +212,7 @@ func strToMethod(s string) gen.Method {
 	}
 }
 
-func (f *FileSet) applyDirs(p *gen.Printer) {
+func (f *FileSet) applyDirs(p gen.GeneratorSet) {
 	// apply directives of the form
 	//
 	// 	//msgp:encode ignore {{TypeName}}
@@ -247,15 +247,15 @@ loop:
 	}
 }
 
-func (f *FileSet) PrintTo(p *gen.Printer) error {
-	f.applyDirs(p)
-	names := make([]string, 0, len(f.Identities))
-	for name := range f.Identities {
+func (fs *FileSet) PrintTo(p gen.GeneratorSet) error {
+	fs.applyDirs(p)
+	names := make([]string, 0, len(fs.Identities))
+	for name := range fs.Identities {
 		names = append(names, name)
 	}
 	sort.Strings(names)
 	for _, name := range names {
-		el := f.Identities[name]
+		el := fs.Identities[name]
 		el.SetVarname("z")
 		pushstate(el.TypeName())
 		err := p.Print(el)

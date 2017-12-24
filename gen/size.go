@@ -122,7 +122,7 @@ func (s *sizeGen) gPtr(p *Ptr) {
 	s.p.printf("\nif %s == nil {\ns += msgp.NilSize\n} else {", p.Varname())
 	next(s, p.Value)
 	s.state = add // closing block; reset to add
-	s.p.closeblock()
+	s.p.closeBlock()
 }
 
 func (s *sizeGen) gSlice(sl *Slice) {
@@ -175,8 +175,8 @@ func (s *sizeGen) gMap(m *Map) {
 	s.p.printf("\ns += msgp.StringPrefixSize + len(%s)", m.Keyidx)
 	s.state = expr
 	next(s, m.Value)
-	s.p.closeblock()
-	s.p.closeblock()
+	s.p.closeBlock()
+	s.p.closeBlock()
 	s.state = add
 }
 

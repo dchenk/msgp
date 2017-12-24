@@ -61,13 +61,11 @@ func randIdent() string {
 // 	},
 // }
 
-// Base is one of the
-// base types
+// A Primitive is a basic type to msgp.
 type Primitive uint8
 
-// this is effectively the
-// list of currently available
-// ReadXxxx / WriteXxxx methods.
+// This list of Primitive types is effectively the list of types
+// currently having ReadXxxx and WriteXxxx methods.
 const (
 	Invalid Primitive = iota
 	Bytes
@@ -95,8 +93,8 @@ const (
 	IDENT // IDENT means an unrecognized identifier
 )
 
-// all of the recognized identities
-// that map to primitive types
+// primitives lists all of the recognized identities that have
+// a corresponding Primitive type.
 var primitives = map[string]Primitive{
 	"[]byte":         Bytes,
 	"string":         String,
@@ -122,10 +120,9 @@ var primitives = map[string]Primitive{
 	"msgp.Extension": Ext,
 }
 
-// types built into the library
-// that satisfy all of the
-// interfaces.
-var builtins = map[string]struct{}{
+// builtIns are types built into the library
+// that satisfy all of the interfaces.
+var builtIns = map[string]struct{}{
 	"msgp.Raw":    struct{}{},
 	"msgp.Number": struct{}{},
 }
@@ -542,7 +539,7 @@ func (s *BaseElem) Complexity() int {
 // by the package.
 func (s *BaseElem) Resolved() bool {
 	if s.Value == IDENT {
-		_, ok := builtins[s.TypeName()]
+		_, ok := builtIns[s.TypeName()]
 		return ok
 	}
 	return true

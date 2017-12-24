@@ -134,7 +134,7 @@ func (e *encodeGen) gMap(m *Map) {
 	e.p.printf("\nfor %s, %s := range %s {", m.Keyidx, m.Validx, vname)
 	e.writeAndCheck(stringTyp, literalFmt, m.Keyidx)
 	next(e, m.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gPtr(s *Ptr) {
@@ -144,7 +144,7 @@ func (e *encodeGen) gPtr(s *Ptr) {
 	e.fuseHook()
 	e.p.printf("\nif %s == nil { err = en.WriteNil(); if err != nil { return; } } else {", s.Varname())
 	next(e, s.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gSlice(s *Slice) {

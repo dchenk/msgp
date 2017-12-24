@@ -94,15 +94,13 @@ const (
 	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
 )
 
-type Printer struct {
-	gens []generator
-}
+type GeneratorSet []generator
 
-func NewPrinter(m Method, out io.Writer, tests io.Writer) *Printer {
+func NewGeneratorSet(m Method, out io.Writer, tests io.Writer) GeneratorSet {
 	if m.isset(Test) && tests == nil {
-		panic("cannot print tests with 'nil' tests argument!")
+		panic("cannot print tests with 'nil' tests argument")
 	}
-	gens := make([]generator, 0, 7)
+	gens := make(GeneratorSet, 0, 7)
 	if m.isset(Decode) {
 		gens = append(gens, decode(out))
 	}
@@ -125,21 +123,18 @@ func NewPrinter(m Method, out io.Writer, tests io.Writer) *Printer {
 		gens = append(gens, etest(tests))
 	}
 	if len(gens) == 0 {
-		panic("NewPrinter called with invalid method flags")
+		panic("NewGeneratorSet called with invalid method flags")
 	}
-	return &Printer{gens: gens}
+	return gens
 }
 
-// TransformPass is a pass that transforms individual
-// elements. (Note that if the returned is different from
-// the argument, it should not point to the same objects.)
+// A TransformPass is a pass that transforms individual elements. If the returned is
+// different from the argument, it should not point to the same objects.
 type TransformPass func(Elem) Elem
 
-// IgnoreTypename is a pass that just ignores
-// types of a given name.
+// IgnoreTypename is a pass that just ignores types of a given name.
 func IgnoreTypename(pattern string) TransformPass {
 	return func(e Elem) Elem {
-		// Check if the type name is a regexp.
 		if TypeNameMatches(pattern, e.TypeName()) {
 			return nil
 		}
@@ -157,11 +152,11 @@ func TypeNameMatches(pattern, typeName string) bool {
 	if len(pattern) > 4 && pattern[:3] == "reg" {
 		if string(pattern[3]) == "!" {
 			if !regexp.MustCompile(pattern[5:]).MatchString(typeName) {
-				fmt.Printf("Matched negated regexp %q to type name %q\n", pattern[5:], typeName)
+				fmt.Printf("Matched negated regexp %q to type %q\n", pattern[5:], typeName)
 				return true
 			}
 		} else if regexp.MustCompile(pattern[4:]).MatchString(typeName) {
-			fmt.Printf("Matched regexp %q to type name %q\n", pattern[4:], typeName)
+			fmt.Printf("Matched regexp %q to type %q\n", pattern[4:], typeName)
 			return true
 		}
 		return false
@@ -172,8 +167,8 @@ func TypeNameMatches(pattern, typeName string) bool {
 
 // ApplyDirective applies a directive to a named pass
 // and all of its dependents.
-func (p *Printer) ApplyDirective(pass Method, t TransformPass) {
-	for _, g := range p.gens {
+func (gs GeneratorSet) ApplyDirective(pass Method, t TransformPass) {
+	for _, g := range gs {
 		if g.Method().isset(pass) {
 			g.Add(t)
 		}
@@ -181,8 +176,8 @@ func (p *Printer) ApplyDirective(pass Method, t TransformPass) {
 }
 
 // Print prints an Elem.
-func (p *Printer) Print(e Elem) error {
-	for _, g := range p.gens {
+func (gs GeneratorSet) Print(e Elem) error {
+	for _, g := range gs {
 		// Elem.SetVarname() is called before the Print() step in parse.FileSet.PrintTo().
 		// Elem.SetVarname() generates identifiers as it walks the Elem. This can cause
 		// collisions between idents created during SetVarname and idents created during Print,
@@ -190,7 +185,6 @@ func (p *Printer) Print(e Elem) error {
 		resetIdent("zb")
 		err := g.Execute(e)
 		resetIdent("za")
-
 		if err != nil {
 			return err
 		}
@@ -203,7 +197,7 @@ func (p *Printer) Print(e Elem) error {
 type generator interface {
 	Method() Method
 	Add(p TransformPass)
-	Execute(Elem) error // execute writes the method for the provided object.
+	Execute(Elem) error // Execute writes the method for the provided object.
 }
 
 type passes []TransformPass
@@ -334,7 +328,7 @@ func (p *printer) resizeMap(size string, m *Map) {
 	p.printf("\n%s = make(%s, %s)", vn, m.TypeName(), size)
 	p.printf("\n} else if len(%s) > 0 {", vn)
 	p.clearMap(vn)
-	p.closeblock()
+	p.closeBlock()
 }
 
 // assign key to value based on varnames
@@ -354,22 +348,22 @@ func (p *printer) resizeSlice(size string, s *Slice) {
 	p.printf("\nif cap(%[1]s) >= int(%[2]s) { %[1]s = (%[1]s)[:%[2]s] } else { %[1]s = make(%[3]s, %[2]s) }", s.Varname(), size, s.TypeName())
 }
 
-func (p *printer) arrayCheck(want string, got string) {
+func (p *printer) arrayCheck(want, got string) {
 	p.printf("\nif %[1]s != %[2]s { err = msgp.ArrayError{Wanted: %[2]s, Got: %[1]s}; return }", got, want)
 }
 
-func (p *printer) closeblock() { p.print("\n}") }
-
-// does:
-//
-// for idx := range iter {
-//     {{generate inner}}
-// }
-//
+// rangeBlock prints:
+//  for idx := range iter {
+//  	{{generate inner}}
+//  }
 func (p *printer) rangeBlock(idx string, iter string, t traversal, inner Elem) {
 	p.printf("\n for %s := range %s {", idx, iter)
 	next(t, inner)
-	p.closeblock()
+	p.closeBlock()
+}
+
+func (p *printer) closeBlock() {
+	p.print("\n}")
 }
 
 func (p *printer) nakedReturn() {
