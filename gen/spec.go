@@ -11,7 +11,6 @@ const (
 	lenAsUint32 = "uint32(len(%s))"
 	literalFmt  = "%s"
 	intFmt      = "%d"
-	quotedFmt   = `"%s"`
 	mapHeader   = "MapHeader"
 	arrayHeader = "ArrayHeader"
 	mapKey      = "MapKeyPtr"
@@ -19,12 +18,12 @@ const (
 	u32         = "uint32"
 )
 
-// Method is a bitfield representing something that the
+// A Method is a bitfield representing something that the
 // generator knows how to print.
 type Method uint8
 
-// are the bits in 'f' set in 'm'?
-func (m Method) isset(f Method) bool { return (m&f == f) }
+// isSet says if the bits in 'f' are set in 'm'
+func (m Method) isSet(f Method) bool { return m&f == f }
 
 // String implements fmt.Stringer
 func (m Method) String() string {
@@ -44,12 +43,12 @@ func (m Method) String() string {
 	case Test:
 		return "test"
 	default:
-		// return e.g. "decode+encode+test"
+		// return something like "decode+encode+test"
 		modes := [...]Method{Decode, Encode, Marshal, Unmarshal, Size, Test}
 		any := false
 		nm := ""
 		for _, mm := range modes {
-			if m.isset(mm) {
+			if m.isSet(mm) {
 				if any {
 					nm += "+" + mm.String()
 				} else {
@@ -59,9 +58,20 @@ func (m Method) String() string {
 			}
 		}
 		return nm
-
 	}
 }
+
+const (
+	Decode      Method                       = 1 << iota // msgp.Decoder
+	Encode                                               // msgp.Encoder
+	Marshal                                              // msgp.Marshaler
+	Unmarshal                                            // msgp.Unmarshaler
+	Size                                                 // msgp.Sizer
+	Test                                                 // generate tests
+	invalidmeth                                          // this isn't a method
+	encodetest  = Encode | Decode | Test                 // tests for Encoder and Decoder
+	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
+)
 
 func strtoMeth(s string) Method {
 	switch s {
@@ -82,101 +92,58 @@ func strtoMeth(s string) Method {
 	}
 }
 
-const (
-	Decode      Method                       = 1 << iota // msgp.Decoder
-	Encode                                               // msgp.Encoder
-	Marshal                                              // msgp.Marshaler
-	Unmarshal                                            // msgp.Unmarshaler
-	Size                                                 // msgp.Sizer
-	Test                                                 // generate tests
-	invalidmeth                                          // this isn't a method
-	encodetest  = Encode | Decode | Test                 // tests for Encoder and Decoder
-	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
-)
+// A generator has all the methods needed to generate code.
+type generator interface {
+	Method() Method
+	Add(p TransformPass)
+	Execute(Elem) error
+}
 
-type GeneratorSet []generator
+type generatorSet []generator
 
-func NewGeneratorSet(m Method, out io.Writer, tests io.Writer) GeneratorSet {
-	if m.isset(Test) && tests == nil {
+func newGeneratorSet(m Method, out io.Writer, tests io.Writer) generatorSet {
+	if m.isSet(Test) && tests == nil {
 		panic("cannot print tests with 'nil' tests argument")
 	}
-	gens := make(GeneratorSet, 0, 7)
-	if m.isset(Decode) {
+	gens := make(generatorSet, 0, 7)
+	if m.isSet(Decode) {
 		gens = append(gens, decode(out))
 	}
-	if m.isset(Encode) {
+	if m.isSet(Encode) {
 		gens = append(gens, encode(out))
 	}
-	if m.isset(Marshal) {
+	if m.isSet(Marshal) {
 		gens = append(gens, marshal(out))
 	}
-	if m.isset(Unmarshal) {
+	if m.isSet(Unmarshal) {
 		gens = append(gens, unmarshal(out))
 	}
-	if m.isset(Size) {
+	if m.isSet(Size) {
 		gens = append(gens, sizes(out))
 	}
-	if m.isset(marshaltest) {
+	if m.isSet(marshaltest) {
 		gens = append(gens, mtest(tests))
 	}
-	if m.isset(encodetest) {
+	if m.isSet(encodetest) {
 		gens = append(gens, etest(tests))
 	}
 	if len(gens) == 0 {
-		panic("NewGeneratorSet called with invalid method flags")
+		panic("newGeneratorSet called with invalid method flags")
 	}
 	return gens
 }
 
-// A TransformPass is a pass that transforms individual elements. If the returned is
-// different from the argument, it should not point to the same objects.
-type TransformPass func(Elem) Elem
-
-// IgnoreTypename is a pass that just ignores types of a given name.
-func IgnoreTypename(pattern string) TransformPass {
-	return func(e Elem) Elem {
-		if TypeNameMatches(pattern, e.TypeName()) {
-			return nil
-		}
-		return e
-	}
-}
-
-// TypeNameMatches compares the pattern to the typeName to see if the type
-// name satisfies the pattern. The pattern can be either simply the type
-// name itself or a regexp pattern. A regexp pattern is extracted by taking
-// everything that follows either "reg=" or "reg!=" in the pattern string.
-// Pattern "reg=expr" returns true if and only if typeName matches expr.
-// Pattern "reg!=expr" returns true if and only if typeName does NOT match expr.
-func TypeNameMatches(pattern, typeName string) bool {
-	if len(pattern) > 4 && pattern[:3] == "reg" {
-		if string(pattern[3]) == "!" {
-			if !regexp.MustCompile(pattern[5:]).MatchString(typeName) {
-				fmt.Printf("Matched negated regexp %q to type %q\n", pattern[5:], typeName)
-				return true
-			}
-		} else if regexp.MustCompile(pattern[4:]).MatchString(typeName) {
-			fmt.Printf("Matched regexp %q to type %q\n", pattern[4:], typeName)
-			return true
-		}
-		return false
-	}
-	// Concrete type names compare by simple equality:
-	return pattern == typeName
-}
-
-// ApplyDirective applies a directive to a named pass
-// and all of its dependents.
-func (gs GeneratorSet) ApplyDirective(pass Method, t TransformPass) {
+// ApplyDirective applies a directive to a named pass and all of its dependents.
+func (gs generatorSet) ApplyDirective(pass Method, t TransformPass) {
 	for _, g := range gs {
-		if g.Method().isset(pass) {
+		if g.Method().isSet(pass) {
 			g.Add(t)
 		}
 	}
 }
 
 // Print prints an Elem.
-func (gs GeneratorSet) Print(e Elem) error {
+func (gs generatorSet) Print(e Elem) error {
 	for _, g := range gs {
 		// Elem.SetVarname() is called before the Print() step in parse.FileSet.PrintTo().
 		// Elem.SetVarname() generates identifiers as it walks the Elem. This can cause
@@ -192,12 +159,41 @@ func (gs GeneratorSet) Print(e Elem) error {
 	return nil
 }
 
-// generator is the interface through
-// which code is generated.
-type generator interface {
-	Method() Method
-	Add(p TransformPass)
-	Execute(Elem) error // Execute writes the method for the provided object.
+// A TransformPass is a pass that transforms individual elements. If the returned is
+// different from the argument, it should not point to the same objects.
+type TransformPass func(Elem) Elem
+
+// IgnoreTypename is a pass that just ignores types of a given name.
+func IgnoreTypename(pattern string) TransformPass {
+	return func(e Elem) Elem {
+		if typeNameMatches(pattern, e.TypeName()) {
+			return nil
+		}
+		return e
+	}
+}
+
+// typeNameMatches compares the pattern to the typeName to see if the type name
+// satisfies the pattern. The pattern can be either simply the type name itself
+// or a regexp pattern. A regexp pattern is extracted by taking everything that
+// follows either "reg=" or "reg!=" in the pattern string.
+// Pattern "reg=expr" returns true if and only if typeName matches expr.
+// Pattern "reg!=expr" returns true if and only if typeName does NOT match expr.
+func typeNameMatches(pattern, typeName string) bool {
+	if len(pattern) > 4 && pattern[:3] == "reg" {
+		if string(pattern[3]) == "!" {
+			if !regexp.MustCompile(pattern[5:]).MatchString(typeName) {
+				fmt.Printf("Matched negated regexp %q to type %q\n", pattern[5:], typeName)
+				return true
+			}
+		} else if regexp.MustCompile(pattern[4:]).MatchString(typeName) {
+			fmt.Printf("Matched regexp %q to type %q\n", pattern[4:], typeName)
+			return true
+		}
+		return false
+	}
+	// Concrete type names compare by simple equality.
+	return pattern == typeName
 }
 
 type passes []TransformPass
@@ -208,7 +204,7 @@ func (p *passes) Add(t TransformPass) {
 
 func (p *passes) applyall(e Elem) Elem {
 	for _, t := range *p {
-		e = t(e)
+		e = t(e) // Execute the TransformPass func.
 		if e == nil {
 			return nil
 		}
@@ -225,8 +221,7 @@ type traversal interface {
 	gStruct(*Struct)
 }
 
-// type-switch dispatch to the correct
-// method given the type of 'e'
+// Call the method corresponding to the type of Elem e.
 func next(t traversal, e Elem) {
 	switch e := e.(type) {
 	case *Map:
@@ -262,56 +257,52 @@ func imutMethodReceiver(p Elem) string {
 	nope:
 		return "*" + p.TypeName()
 
-	// gets dereferenced automatically
+	// Arrays get de-referenced automatically.
 	case *Array:
 		return "*" + p.TypeName()
 
-	// everything else can be
-	// by-value.
+	// Everything else can be by-value.
 	default:
 		return p.TypeName()
 	}
 }
 
-// if necessary, wraps a type
-// so that its method receiver
-// is of the write type.
+// methodReceiver wraps, if necessary, a type so that
+// its method receiver is of the right type.
 func methodReceiver(p Elem) string {
 	switch p.(type) {
-
-	// structs and arrays are
-	// dereferenced automatically,
-	// so no need to alter varname
+	// structs and arrays are de-referenced
+	// automatically, so no need to alter varname
 	case *Struct, *Array:
 		return "*" + p.TypeName()
-	// set variable name to
-	// *varname
+	// set variable name to *varname
 	default:
 		p.SetVarname("(*" + p.Varname() + ")")
 		return "*" + p.TypeName()
 	}
 }
 
-func unsetReceiver(p Elem) {
-	switch p.(type) {
+// unsetReceiver sets Varname to "z" for the Elem if its not a *Struct or *Array.
+func unsetReceiver(e Elem) {
+	switch e.(type) {
 	case *Struct, *Array:
 	default:
-		p.SetVarname("z")
+		e.SetVarname("z")
 	}
 }
 
-// shared utility for generators
+// The printer type is a shared utility for generators.
 type printer struct {
 	w   io.Writer
 	err error
 }
 
-// writes "var {{name}} {{typ}};"
+// writes "var {{name}} {{typ}}"
 func (p *printer) declare(name string, typ string) {
 	p.printf("\nvar %s %s", name, typ)
 }
 
-// does:
+// resizeMap does:
 //
 // if m != nil && size > 0 {
 //     m = make(type, size)
@@ -333,10 +324,9 @@ func (p *printer) resizeMap(size string, m *Map) {
 
 // assign key to value based on varnames
 func (p *printer) mapAssign(m *Map) {
-	if !p.ok() {
-		return
+	if p.ok() {
+		p.printf("\n%s[%s] = %s", m.Varname(), m.Keyidx, m.Validx)
 	}
-	p.printf("\n%s[%s] = %s", m.Varname(), m.Keyidx, m.Validx)
 }
 
 // clear map keys
@@ -377,26 +367,24 @@ func (p *printer) comment(s string) {
 }
 
 func (p *printer) printf(format string, args ...interface{}) {
-	if p.err == nil {
+	if p.ok() {
 		_, p.err = fmt.Fprintf(p.w, format, args...)
 	}
 }
 
 func (p *printer) print(format string) {
-	if p.err == nil {
+	if p.ok() {
 		_, p.err = io.WriteString(p.w, format)
 	}
 }
 
 func (p *printer) initPtr(pt *Ptr) {
 	if pt.Needsinit() {
-		vname := pt.Varname()
-		p.printf("\nif %s == nil { %s = new(%s); }", vname, vname, pt.Value.TypeName())
+		vn := pt.Varname()
+		p.printf("\nif %s == nil { %s = new(%s); }", vn, vn, pt.Value.TypeName())
 	}
 }
 
-func (p *printer) ok() bool { return p.err == nil }
-
-func tobaseConvert(b *BaseElem) string {
-	return b.ToBase() + "(" + b.Varname() + ")"
+func (p *printer) ok() bool {
+	return p.err == nil
 }

@@ -33,7 +33,7 @@ func (m *marshalGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
@@ -185,11 +185,11 @@ func (m *marshalGen) gBase(b *BaseElem) {
 
 	if b.Convert {
 		if b.ShimMode == Cast {
-			vname = tobaseConvert(b)
+			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
 			m.p.printf("\nvar %s %s", vname, b.BaseType())
-			m.p.printf("\n%s, err = %s", vname, tobaseConvert(b))
+			m.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			m.p.printf(errcheck)
 		}
 	}
