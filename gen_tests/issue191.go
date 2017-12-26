@@ -1,4 +1,4 @@
-package _generated
+package gen_tests
 
 //go:generate msgp
 

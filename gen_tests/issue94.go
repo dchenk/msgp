@@ -1,4 +1,4 @@
-package _generated
+package gen_tests
 
 import (
 	"time"
@@ -14,7 +14,7 @@ import (
 // the code is generated if the generated code doesn't
 // have the right identifier in it.
 
-//go:generate ./search.sh $GOFILE timetostr
+//go:generate ./issue94_search.sh $GOFILE timetostr
 
 //msgp:shim time.Time as:string using:timetostr/strtotime
 type T struct {
