@@ -95,7 +95,7 @@ func (m *marshalGen) tuple(s *Struct) {
 		if !m.p.ok() {
 			return
 		}
-		next(m, s.Fields[i].FieldElem)
+		next(m, s.Fields[i].fieldElem)
 	}
 }
 
@@ -111,12 +111,12 @@ func (m *marshalGen) mapstruct(s *Struct) {
 		if !m.p.ok() {
 			return
 		}
-		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
+		data = msgp.AppendString(nil, s.Fields[i].fieldTag)
 
-		m.p.printf("\n// string %q", s.Fields[i].FieldTag)
+		m.p.printf("\n// string %q", s.Fields[i].fieldTag)
 		m.Fuse(data)
 
-		next(m, s.Fields[i].FieldElem)
+		next(m, s.Fields[i].fieldElem)
 	}
 }
 

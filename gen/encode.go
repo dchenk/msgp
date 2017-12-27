@@ -91,7 +91,7 @@ func (e *encodeGen) tuple(s *Struct) {
 		if !e.p.ok() {
 			return
 		}
-		next(e, s.Fields[i].FieldElem)
+		next(e, s.Fields[i].fieldElem)
 	}
 }
 
@@ -118,10 +118,10 @@ func (e *encodeGen) structmap(s *Struct) {
 		if !e.p.ok() {
 			return
 		}
-		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
-		e.p.printf("\n// write %q", s.Fields[i].FieldTag)
+		data = msgp.AppendString(nil, s.Fields[i].fieldTag)
+		e.p.printf("\n// write %q", s.Fields[i].fieldTag)
 		e.Fuse(data)
-		next(e, s.Fields[i].FieldElem)
+		next(e, s.Fields[i].fieldElem)
 	}
 }
 

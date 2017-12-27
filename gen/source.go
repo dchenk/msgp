@@ -301,11 +301,11 @@ func fieldName(f *ast.Field) string {
 	return f.Names[0].Name + " (and others)"
 }
 
-func (s *source) parseFieldList(fl *ast.FieldList) []StructField {
+func (s *source) parseFieldList(fl *ast.FieldList) []structField {
 	if fl == nil || fl.NumFields() == 0 {
 		return nil
 	}
-	out := make([]StructField, 0, fl.NumFields())
+	out := make([]structField, 0, fl.NumFields())
 	for _, field := range fl.List {
 		pushState(fieldName(field))
 		fds := s.getField(field)
@@ -319,10 +319,10 @@ func (s *source) parseFieldList(fl *ast.FieldList) []StructField {
 	return out
 }
 
-// translate *ast.Field into []StructField
-func (s *source) getField(f *ast.Field) []StructField {
+// translate *ast.Field into []structField
+func (s *source) getField(f *ast.Field) []structField {
 
-	fields := make([]StructField, 1)
+	fields := make([]structField, 1)
 	var extension bool
 	// parse tag; otherwise field name is field tag
 	if f.Tag != nil {
@@ -335,8 +335,8 @@ func (s *source) getField(f *ast.Field) []StructField {
 		if tags[0] == "-" {
 			return nil
 		}
-		fields[0].FieldTag = tags[0]
-		fields[0].RawTag = f.Tag.Value
+		fields[0].fieldTag = tags[0]
+		fields[0].rawTag = f.Tag.Value
 	}
 
 	ex := s.parseExpr(f.Type)
@@ -347,25 +347,25 @@ func (s *source) getField(f *ast.Field) []StructField {
 	// parse field name
 	switch len(f.Names) {
 	case 0:
-		fields[0].FieldName = embedded(f.Type)
+		fields[0].fieldName = embedded(f.Type)
 	case 1:
-		fields[0].FieldName = f.Names[0].Name
+		fields[0].fieldName = f.Names[0].Name
 	default:
 		// this is for a multiple in-line declaration,
 		// e.g. type A struct { One, Two int }
 		fields = fields[0:0]
 		for _, nm := range f.Names {
-			fields = append(fields, StructField{
-				FieldTag:  nm.Name,
-				FieldName: nm.Name,
-				FieldElem: ex.Copy(),
+			fields = append(fields, structField{
+				fieldTag:  nm.Name,
+				fieldName: nm.Name,
+				fieldElem: ex.Copy(),
 			})
 		}
 		return fields
 	}
-	fields[0].FieldElem = ex
-	if fields[0].FieldTag == "" {
-		fields[0].FieldTag = fields[0].FieldName
+	fields[0].fieldElem = ex
+	if fields[0].fieldTag == "" {
+		fields[0].fieldTag = fields[0].fieldName
 	}
 
 	// Validate the extension.
