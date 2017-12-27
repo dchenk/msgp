@@ -81,7 +81,7 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 		if !d.p.ok() {
 			return
 		}
-		next(d, s.Fields[i].FieldElem)
+		next(d, s.Fields[i].fieldElem)
 	}
 }
 
@@ -95,8 +95,8 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	d.assignAndCheck("field", mapKey)
 	d.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
-		d.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
-		next(d, s.Fields[i].FieldElem)
+		d.p.printf("\ncase \"%s\":", s.Fields[i].fieldTag)
+		next(d, s.Fields[i].fieldElem)
 		if !d.p.ok() {
 			return
 		}

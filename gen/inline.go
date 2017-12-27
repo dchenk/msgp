@@ -29,7 +29,7 @@ func (s *source) findShim(id string, be *BaseElem) {
 		switch el := el.(type) {
 		case *Struct:
 			for i := range el.Fields {
-				s.nextShim(&el.Fields[i].FieldElem, id, be)
+				s.nextShim(&el.Fields[i].fieldElem, id, be)
 			}
 		case *Array:
 			s.nextShim(&el.Els, id, be)
@@ -55,7 +55,7 @@ func (s *source) nextShim(ref *Elem, id string, be *BaseElem) {
 		switch el := (*ref).(type) {
 		case *Struct:
 			for i := range el.Fields {
-				s.nextShim(&el.Fields[i].FieldElem, id, be)
+				s.nextShim(&el.Fields[i].fieldElem, id, be)
 			}
 		case *Array:
 			s.nextShim(&el.Els, id, be)
@@ -76,7 +76,7 @@ func (s *source) propInline() {
 		switch el := el.(type) {
 		case *Struct:
 			for i := range el.Fields {
-				s.nextInline(&el.Fields[i].FieldElem, name)
+				s.nextInline(&el.Fields[i].fieldElem, name)
 			}
 		case *Array:
 			s.nextInline(&el.Els, name)
@@ -117,7 +117,7 @@ func (s *source) nextInline(ref *Elem, root string) {
 		}
 	case *Struct:
 		for i := range el.Fields {
-			s.nextInline(&el.Fields[i].FieldElem, root)
+			s.nextInline(&el.Fields[i].fieldElem, root)
 		}
 	case *Array:
 		s.nextInline(&el.Els, root)

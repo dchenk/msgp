@@ -103,16 +103,16 @@ func (s *sizeGen) gStruct(st *Struct) {
 			if !s.p.ok() {
 				return
 			}
-			next(s, st.Fields[i].FieldElem)
+			next(s, st.Fields[i].fieldElem)
 		}
 	} else {
 		data := msgp.AppendMapHeader(nil, nfields)
 		s.addConstant(strconv.Itoa(len(data)))
 		for i := range st.Fields {
 			data = data[:0]
-			data = msgp.AppendString(data, st.Fields[i].FieldTag)
+			data = msgp.AppendString(data, st.Fields[i].fieldTag)
 			s.addConstant(strconv.Itoa(len(data)))
-			next(s, st.Fields[i].FieldElem)
+			next(s, st.Fields[i].fieldElem)
 		}
 	}
 }
@@ -209,7 +209,7 @@ func lenExpr(sl *Slice) string {
 }
 
 // fixedSize says if a given primitive is always the same (max) size on the wire.
-func fixedSize(p Primitive) bool {
+func fixedSize(p primitive) bool {
 	switch p {
 	case Intf, Ext, IDENT, Bytes, String:
 		return false
@@ -242,7 +242,7 @@ func fixedSizeExpr(e Elem) (string, bool) {
 	case *Struct:
 		var str string
 		for _, f := range e.Fields {
-			if fs, ok := fixedSizeExpr(f.FieldElem); ok {
+			if fs, ok := fixedSizeExpr(f.fieldElem); ok {
 				if str == "" {
 					str = fs
 				} else {
@@ -257,7 +257,7 @@ func fixedSizeExpr(e Elem) (string, bool) {
 		hdrlen += len(mhdr)
 		var strbody []byte
 		for _, f := range e.Fields {
-			strbody = msgp.AppendString(strbody[:0], f.FieldTag)
+			strbody = msgp.AppendString(strbody[:0], f.fieldTag)
 			hdrlen += len(strbody)
 		}
 		return fmt.Sprintf("%d + %s", hdrlen, str), true
@@ -266,7 +266,7 @@ func fixedSizeExpr(e Elem) (string, bool) {
 }
 
 // print size expression of a variable name
-func baseSizeExpr(value Primitive, vname, basename string) string {
+func baseSizeExpr(value primitive, vname, basename string) string {
 	switch value {
 	case Ext:
 		return "msgp.ExtensionPrefixSize + " + stripRef(vname) + ".Len()"

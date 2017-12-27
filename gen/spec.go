@@ -248,7 +248,7 @@ func imutMethodReceiver(p Elem) string {
 		// TODO(HACK): actually do real math here.
 		if len(e.Fields) <= 3 {
 			for i := range e.Fields {
-				if be, ok := e.Fields[i].FieldElem.(*BaseElem); !ok || (be.Value == IDENT || be.Value == Bytes) {
+				if be, ok := e.Fields[i].fieldElem.(*BaseElem); !ok || (be.Value == IDENT || be.Value == Bytes) {
 					goto nope
 				}
 			}

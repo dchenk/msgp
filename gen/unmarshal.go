@@ -82,7 +82,7 @@ func (u *unmarshalGen) tuple(s *Struct) {
 		if !u.p.ok() {
 			return
 		}
-		next(u, s.Fields[i].FieldElem)
+		next(u, s.Fields[i].fieldElem)
 	}
 }
 
@@ -101,8 +101,8 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 		if !u.p.ok() {
 			return
 		}
-		u.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
-		next(u, s.Fields[i].FieldElem)
+		u.p.printf("\ncase \"%s\":", s.Fields[i].fieldTag)
+		next(u, s.Fields[i].fieldElem)
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
 	u.p.print(errcheck)

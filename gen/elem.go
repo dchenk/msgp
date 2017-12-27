@@ -36,10 +36,10 @@ func randIdent() string {
 // 		name: "z",
 // 		Value: &Struct{
 // 			Name: "Marshaler",
-// 			Fields: []StructField{
+// 			Fields: []structField{
 // 				{
-// 					FieldTag: "thing1",
-// 					FieldElem: &Ptr{
+// 					fieldTag: "thing1",
+// 					fieldElem: &Ptr{
 // 						name: "z.Thing1",
 // 						Value: &BaseElem{
 // 							name:    "*z.Thing1",
@@ -49,8 +49,8 @@ func randIdent() string {
 // 					},
 // 				},
 // 				{
-// 					FieldTag: "body",
-// 						FieldElem: &BaseElem{
+// 					fieldTag: "body",
+// 						fieldElem: &BaseElem{
 // 						name:    "z.Body",
 // 						Value:   Bytes,
 // 						Convert: false,
@@ -60,13 +60,13 @@ func randIdent() string {
 // 		},
 //  }
 
-// A Primitive is a basic type to msgp.
-type Primitive uint8
+// A primitive is a basic type to msgp.
+type primitive uint8
 
-// This list of Primitive types is effectively the list of types
+// This list of primitive types is effectively the list of types
 // currently having ReadXxxx and WriteXxxx methods.
 const (
-	Invalid Primitive = iota
+	Invalid primitive = iota
 	Bytes
 	String
 	Float32
@@ -92,7 +92,7 @@ const (
 	IDENT // IDENT means an unrecognized identifier
 )
 
-func (k Primitive) String() string {
+func (k primitive) String() string {
 	switch k {
 	case String:
 		return "String"
@@ -144,8 +144,8 @@ func (k Primitive) String() string {
 }
 
 // primitives lists all of the recognized identities that have
-// a corresponding Primitive type.
-var primitives = map[string]Primitive{
+// a corresponding primitive type.
+var primitives = map[string]primitive{
 	"[]byte":         Bytes,
 	"string":         String,
 	"float32":        Float32,
@@ -395,7 +395,7 @@ func (s *Ptr) Needsinit() bool {
 
 type Struct struct {
 	common
-	Fields  []StructField // field list
+	Fields  []structField // field list
 	AsTuple bool          // write as an array instead of a map
 }
 
@@ -405,9 +405,9 @@ func (s *Struct) TypeName() string {
 	}
 	str := "struct{\n"
 	for i := range s.Fields {
-		str += s.Fields[i].FieldName +
-			" " + s.Fields[i].FieldElem.TypeName() +
-			" " + s.Fields[i].RawTag + "\n"
+		str += s.Fields[i].fieldName +
+			" " + s.Fields[i].fieldElem.TypeName() +
+			" " + s.Fields[i].rawTag + "\n"
 	}
 	str += "}"
 	s.common.Alias(str)
@@ -421,10 +421,10 @@ func (s *Struct) SetVarname(a string) {
 
 func (s *Struct) Copy() Elem {
 	g := *s
-	g.Fields = make([]StructField, len(s.Fields))
+	g.Fields = make([]structField, len(s.Fields))
 	copy(g.Fields, s.Fields)
 	for i := range s.Fields {
-		g.Fields[i].FieldElem = s.Fields[i].FieldElem.Copy()
+		g.Fields[i].fieldElem = s.Fields[i].fieldElem.Copy()
 	}
 	return &g
 }
@@ -432,16 +432,23 @@ func (s *Struct) Copy() Elem {
 func (s *Struct) Complexity() int {
 	c := 1
 	for i := range s.Fields {
-		c += s.Fields[i].FieldElem.Complexity()
+		c += s.Fields[i].fieldElem.Complexity()
 	}
 	return c
 }
 
-type StructField struct {
-	FieldTag  string // the string inside the `msg:""` tag
-	RawTag    string // the full tag (in case there are non-msg keys)
-	FieldName string // the name of the struct field
-	FieldElem Elem   // the field type
+type structField struct {
+	fieldTag  string // the string inside the `msg:""` tag
+	rawTag    string // the full tag (in case there are non-msg keys)
+	fieldName string // the name of the struct field
+	fieldElem Elem   // the field type
+}
+
+// writeStructFields is a trampoline for writeBase for all of the fields in a struct.
+func writeStructFields(s []structField, structName string) {
+	for i := range s {
+		s[i].fieldElem.SetVarname(fmt.Sprintf("%s.%s", structName, s[i].fieldName))
+	}
 }
 
 type ShimMode int
@@ -457,7 +464,7 @@ type BaseElem struct {
 	ShimMode     ShimMode  // Method used to shim
 	ShimToBase   string    // shim to base type, or empty
 	ShimFromBase string    // shim from base type, or empty
-	Value        Primitive // Type of element
+	Value        primitive // Type of element
 	Convert      bool      // should we do an explicit conversion?
 	mustinline   bool      // must inline; not printable
 	needsref     bool      // needs reference for shim
@@ -580,13 +587,6 @@ func (s *BaseElem) Resolved() bool {
 		return ok
 	}
 	return true
-}
-
-// writeStructFields is a trampoline for writeBase for all of the fields in a struct.
-func writeStructFields(s []StructField, name string) {
-	for i := range s {
-		s[i].FieldElem.SetVarname(fmt.Sprintf("%s.%s", name, s[i].FieldName))
-	}
 }
 
 // coerceArraySize ensures we can compare constant array lengths.
