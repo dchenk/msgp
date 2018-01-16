@@ -11,9 +11,8 @@ var (
 )
 
 // TODO:
-// For simplicity's sake, right now we can only generate
-// tests for types that can be initialized with the
-// "Type{}" syntax. We should support all the types.
+// For simplicity's sake, right now we can only generate tests for types that
+// can be initialized with the "Type{}" syntax. We should support all the types.
 
 func mtest(w io.Writer) *mtestGen {
 	return &mtestGen{w: w}

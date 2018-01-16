@@ -90,7 +90,7 @@ func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffe
 	}
 
 	fmt.Println(chalk.Magenta.Color("======= MessagePack Code Generating ======="))
-	fmt.Printf(chalk.Magenta.Color(">>> Input: \"%s\"\n"), srcPath)
+	fmt.Printf(chalk.Magenta.Color(">>> Input: %q\n"), srcPath)
 
 	mainBuf = bytes.NewBuffer(make([]byte, 0, 4096))
 	writePkgHeader(mainBuf, s.pkg)
@@ -99,7 +99,12 @@ func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffe
 	for _, imp := range s.imports {
 		if imp.Name != nil {
 			// If the import has an alias, include it (imp.Path.Value is a quoted string).
-			mainImports = append(mainImports, imp.Name.Name+" "+imp.Path.Value)
+			// But do not include the import if its alias is the blank identifier.
+			if imp.Name.Name == "_" {
+				fmt.Printf(chalk.Blue.Color("Not including import %s with blank identifier as alias\n"), imp.Path.Value)
+			} else {
+				mainImports = append(mainImports, imp.Name.Name+" "+imp.Path.Value)
+			}
 		} else {
 			mainImports = append(mainImports, imp.Path.Value)
 		}
