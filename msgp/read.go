@@ -9,23 +9,16 @@ import (
 	"github.com/philhofer/fwd"
 )
 
-// where we keep old *Readers
-var readerPool = sync.Pool{New: func() interface{} { return &Reader{} }}
+var readerPool = sync.Pool{New: func() interface{} { return &Reader{} }} // Pool to re-use Reader instances.
 
-// Type is a MessagePack wire type,
-// including this package's built-in
-// extension types.
+// A Type is a MessagePack wire type, including this
+// package's built-in extension types.
 type Type byte
 
-// MessagePack Types
-//
-// The zero value of Type
-// is InvalidType.
 const (
-	InvalidType Type = iota
+	InvalidType Type = iota // The zero value of Type is InvalidType.
 
 	// MessagePack built-in types
-
 	StrType
 	BinType
 	MapType
@@ -38,9 +31,7 @@ const (
 	NilType
 	ExtensionType
 
-	// pseudo-types provided
-	// by extensions
-
+	// pseudo-types provided by extensions
 	Complex64Type
 	Complex128Type
 	TimeType
@@ -126,22 +117,16 @@ func NewReaderSize(r io.Reader, sz int) *Reader {
 	return &Reader{R: fwd.NewReaderSize(r, sz)}
 }
 
-// Reader wraps an io.Reader and provides
-// methods to read MessagePack-encoded values
+// Reader wraps an io.Reader and provides methods to read MessagePack-encoded values
 // from it. Readers are buffered.
 type Reader struct {
-	// R is the buffered reader
-	// that the Reader uses
-	// to decode MessagePack.
-	// The Reader itself
-	// is stateless; all the
-	// buffering is done
-	// within R.
+	// R is the buffered reader that the Reader uses to decode MessagePack.
+	// The Reader itself is stateless; all the buffering is done within R.
 	R       *fwd.Reader
 	scratch []byte
 }
 
-// Read implements `io.Reader`
+// Read implements io.Reader.
 func (m *Reader) Read(p []byte) (int, error) {
 	return m.R.Read(p)
 }
@@ -741,7 +726,7 @@ func (m *Reader) ReadUint16() (u uint16, err error) {
 	return
 }
 
-// ReadUint8 reads a uint8 from the reader
+// ReadUint8 reads a uint8 from the reader.
 func (m *Reader) ReadUint8() (u uint8, err error) {
 	var in uint64
 	in, err = m.ReadUint64()
@@ -768,9 +753,7 @@ func (m *Reader) ReadUint() (u uint, err error) {
 }
 
 // ReadByte is analogous to ReadUint8.
-//
-// NOTE: this is *not* an implementation
-// of io.ByteReader.
+// This is *not* an implementation of io.ByteReader.
 func (m *Reader) ReadByte() (b byte, err error) {
 	var in uint64
 	in, err = m.ReadUint64()
@@ -782,9 +765,8 @@ func (m *Reader) ReadByte() (b byte, err error) {
 	return
 }
 
-// ReadBytes reads a MessagePack 'bin' object
-// from the reader and returns its value. It may
-// use 'scratch' for storage if it is non-nil.
+// ReadBytes reads a MessagePack 'bin' object from the reader and returns its value.
+// It may use 'scratch' for storage if it is non-nil.
 func (m *Reader) ReadBytes(scratch []byte) (b []byte, err error) {
 	var p []byte
 	var lead byte
@@ -823,11 +805,9 @@ func (m *Reader) ReadBytes(scratch []byte) (b []byte, err error) {
 	return
 }
 
-// ReadBytesHeader reads the size header
-// of a MessagePack 'bin' object. The user
-// is responsible for dealing with the next
-// 'sz' bytes from the reader in an application-specific
-// way.
+// ReadBytesHeader reads the size header of a MessagePack 'bin' object. The user
+// is responsible for dealing with the next 'sz' bytes from the reader in an
+// application-specific way.
 func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
 	var p []byte
 	p, err = m.R.Peek(1)
@@ -862,10 +842,8 @@ func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
 	}
 }
 
-// ReadExactBytes reads a MessagePack 'bin'-encoded
-// object off of the wire into the provided slice. An
-// ArrayError will be returned if the object is not
-// exactly the length of the input slice.
+// ReadExactBytes reads a MessagePack 'bin'-encoded object off of the wire into the provided slice.
+// An ArrayError will be returned if the object is not exactly the length of the input slice.
 func (m *Reader) ReadExactBytes(into []byte) error {
 	p, err := m.R.Peek(2)
 	if err != nil {
@@ -903,9 +881,8 @@ func (m *Reader) ReadExactBytes(into []byte) error {
 	return err
 }
 
-// ReadStringAsBytes reads a MessagePack 'str' (utf-8) string
-// and returns its value as bytes. It may use 'scratch' for storage
-// if it is non-nil.
+// ReadStringAsBytes reads a MessagePack 'str' (UTF-8) string and returns its
+// value as bytes. It may use 'scratch' for storage if it is non-nil.
 func (m *Reader) ReadStringAsBytes(scratch []byte) (b []byte, err error) {
 	var p []byte
 	var lead byte
@@ -955,10 +932,8 @@ fill:
 	return
 }
 
-// ReadStringHeader reads a string header
-// off of the wire. The user is then responsible
-// for dealing with the next 'sz' bytes from
-// the reader in an application-specific manner.
+// ReadStringHeader reads a string header off of the wire. The user is then responsible
+// for dealing with the next sz bytes from the reader in an application-specific manner.
 func (m *Reader) ReadStringHeader() (sz uint32, err error) {
 	var p []byte
 	p, err = m.R.Peek(1)
@@ -1044,23 +1019,6 @@ fill:
 		s, err = "", nil
 		return
 	}
-	// reading into the memory
-	// that will become the string
-	// itself has vastly superior
-	// worst-case performance, because
-	// the reader buffer doesn't have
-	// to be large enough to hold the string.
-	// the idea here is to make it more
-	// difficult for someone malicious
-	// to cause the system to run out of
-	// memory by sending very large strings.
-	//
-	// NOTE: this works because the argument
-	// passed to (*fwd.Reader).ReadFull escapes
-	// to the heap; its argument may, in turn,
-	// be passed to the underlying reader, and
-	// thus escape analysis *must* conclude that
-	// 'out' escapes.
 	out := make([]byte, read)
 	_, err = m.R.ReadFull(out)
 	if err != nil {

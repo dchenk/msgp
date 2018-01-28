@@ -541,7 +541,7 @@ func (mw *Writer) WriteMapStrStr(mp map[string]string) (err error) {
 			return
 		}
 	}
-	return nil
+	return
 }
 
 // WriteMapStrIntf writes a map[string]interface to the writer
@@ -599,20 +599,20 @@ func (mw *Writer) WriteTime(t time.Time) error {
 //  - A type that satisfies the msgp.Encoder interface
 //  - A type that satisfies the msgp.Extension interface
 func (mw *Writer) WriteIntf(v interface{}) error {
+
 	if v == nil {
 		return mw.WriteNil()
 	}
+
 	switch v := v.(type) {
 
 	// preferred interfaces
-
 	case Encoder:
 		return v.EncodeMsg(mw)
 	case Extension:
 		return mw.WriteExtension(v)
 
 	// concrete types
-
 	case bool:
 		return mw.WriteBool(v)
 	case float32:
@@ -725,6 +725,7 @@ func (mw *Writer) writeStruct(v reflect.Value) error {
 }
 
 func (mw *Writer) writeVal(v reflect.Value) error {
+
 	if !isSupported(v.Kind()) {
 		return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
 	}
@@ -733,42 +734,36 @@ func (mw *Writer) writeVal(v reflect.Value) error {
 	if v.IsNil() {
 		return mw.WriteNil()
 	}
+
 	switch v.Kind() {
 	case reflect.Bool:
 		return mw.WriteBool(v.Bool())
 
 	case reflect.Float32, reflect.Float64:
 		return mw.WriteFloat64(v.Float())
-
 	case reflect.Complex64, reflect.Complex128:
 		return mw.WriteComplex128(v.Complex())
-
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
 		return mw.WriteInt64(v.Int())
-
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			mw.WriteNil()
 		}
 		return mw.writeVal(v.Elem())
-
 	case reflect.Map:
 		return mw.writeMap(v)
-
 	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 		return mw.WriteUint64(v.Uint())
-
 	case reflect.String:
 		return mw.WriteString(v.String())
-
 	case reflect.Slice, reflect.Array:
 		return mw.writeSlice(v)
-
 	case reflect.Struct:
 		return mw.writeStruct(v)
-
 	}
+
 	return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
+
 }
 
 // is the reflect.Kind encodable?
@@ -781,10 +776,8 @@ func isSupported(k reflect.Kind) bool {
 	}
 }
 
-// GuessSize guesses the size of the underlying
-// value of 'i'. If the underlying value is not
-// a simple builtin (or []byte), GuessSize defaults
-// to 512.
+// GuessSize guesses the size of the underlying value of 'i'. If the underlying value is not
+// a simple builtin (or []byte), GuessSize defaults to 512.
 func GuessSize(i interface{}) int {
 	if i == nil {
 		return NilSize
