@@ -5,35 +5,21 @@ import (
 	"strconv"
 )
 
-// The portable parts of the Number implementation
-
-// Number can be
-// an int64, uint64, float32,
-// or float64 internally.
-// It can decode itself
-// from any of the native
-// messagepack number types.
-// The zero-value of Number
-// is Int(0). Using the equality
-// operator with Number compares
-// both the type and the value
-// of the number.
+// A Number can be an int64, uint64, float32, or float64 internally.
+// It can decode itself from any of the native MessagePack number types.
+// The zero-value of Number is Int(0).
 type Number struct {
-	// internally, this
-	// is just a tagged union.
-	// the raw bits of the number
-	// are stored the same way regardless.
+	// Internally, this is just a tagged union.
+	// The raw bits of the number are stored the
+	// same way regardless.
 	bits uint64
 	typ  Type
 }
 
 // AsInt sets the number to an int64.
 func (n *Number) AsInt(i int64) {
-
-	// we always store int(0)
-	// as {0, InvalidType} in
-	// order to preserve
-	// the behavior of the == operator
+	// Always store int(0) as {0, InvalidType} to
+	// preserve the behavior of the == operator.
 	if i == 0 {
 		n.typ = InvalidType
 		n.bits = 0
@@ -50,36 +36,32 @@ func (n *Number) AsUint(u uint64) {
 	n.bits = u
 }
 
-// AsFloat32 sets the value of the number
-// to a float32.
+// AsFloat32 sets the number to a float32.
 func (n *Number) AsFloat32(f float32) {
 	n.typ = Float32Type
 	n.bits = uint64(math.Float32bits(f))
 }
 
-// AsFloat64 sets the value of the
-// number to a float64.
+// AsFloat64 sets the number to a float64.
 func (n *Number) AsFloat64(f float64) {
 	n.typ = Float64Type
 	n.bits = math.Float64bits(f)
 }
 
-// Int casts the number as an int64, and
-// returns whether or not that was the
-// underlying type.
+// Int returns the number converted to a int64 and says whether or not
+// the underlying type was int64.
 func (n *Number) Int() (int64, bool) {
 	return int64(n.bits), n.typ == IntType || n.typ == InvalidType
 }
 
-// Uint casts the number as a uint64, and returns
-// whether or not that was the underlying type.
+// Uint returns the number converted to a uint64 and says whether or not
+// the underlying type was uint64.
 func (n *Number) Uint() (uint64, bool) {
 	return n.bits, n.typ == UintType
 }
 
-// Float casts the number to a float64, and
-// returns whether or not that was the underlying
-// type (either a float64 or a float32).
+// Float returns the number converted to a float64 and says whether or not
+// the underlying type was either a float64 or a float32.
 func (n *Number) Float() (float64, bool) {
 	switch n.typ {
 	case Float32Type:
@@ -91,8 +73,7 @@ func (n *Number) Float() (float64, bool) {
 	}
 }
 
-// Type will return one of:
-// Float64Type, Float32Type, UintType, or IntType.
+// Type returns the number's type as one of Float64Type, Float32Type, UintType, or IntType.
 func (n *Number) Type() Type {
 	if n.typ == InvalidType {
 		return IntType
@@ -100,7 +81,7 @@ func (n *Number) Type() Type {
 	return n.typ
 }
 
-// DecodeMsg implements msgp.Decodable
+// DecodeMsg implements msgp.Decoder.
 func (n *Number) DecodeMsg(r *Reader) error {
 	typ, err := r.NextType()
 	if err != nil {
@@ -140,7 +121,7 @@ func (n *Number) DecodeMsg(r *Reader) error {
 	}
 }
 
-// UnmarshalMsg implements msgp.Unmarshaler
+// UnmarshalMsg implements msgp.Unmarshaler.
 func (n *Number) UnmarshalMsg(b []byte) ([]byte, error) {
 	typ := NextType(b)
 	switch typ {
@@ -177,7 +158,7 @@ func (n *Number) UnmarshalMsg(b []byte) ([]byte, error) {
 	}
 }
 
-// MarshalMsg implements msgp.Marshaler
+// MarshalMsg implements msgp.Marshaler.
 func (n *Number) MarshalMsg(b []byte) ([]byte, error) {
 	switch n.typ {
 	case IntType:
@@ -193,7 +174,7 @@ func (n *Number) MarshalMsg(b []byte) ([]byte, error) {
 	}
 }
 
-// EncodeMsg implements msgp.Encodable
+// EncodeMsg implements msgp.Encoder.
 func (n *Number) EncodeMsg(w *Writer) error {
 	switch n.typ {
 	case IntType:
@@ -209,7 +190,7 @@ func (n *Number) EncodeMsg(w *Writer) error {
 	}
 }
 
-// Msgsize implements msgp.Sizer
+// Msgsize implements msgp.Sizer.
 func (n *Number) Msgsize() int {
 	switch n.typ {
 	case Float32Type:
@@ -225,7 +206,7 @@ func (n *Number) Msgsize() int {
 	}
 }
 
-// MarshalJSON implements json.Marshaler
+// MarshalJSON implements json.Marshaler.
 func (n *Number) MarshalJSON() ([]byte, error) {
 	t := n.Type()
 	if t == InvalidType {
@@ -247,7 +228,7 @@ func (n *Number) MarshalJSON() ([]byte, error) {
 	}
 }
 
-// String implements fmt.Stringer
+// String implements fmt.Stringer.
 func (n *Number) String() string {
 	switch n.typ {
 	case InvalidType:

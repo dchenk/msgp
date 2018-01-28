@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/tinylib/msgp/msgp"
+	"github.com/dchenk/msgp/msgp"
 )
 
 func marshal(w io.Writer) *marshalGen {
@@ -33,7 +33,7 @@ func (m *marshalGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
@@ -95,7 +95,7 @@ func (m *marshalGen) tuple(s *Struct) {
 		if !m.p.ok() {
 			return
 		}
-		next(m, s.Fields[i].FieldElem)
+		next(m, s.Fields[i].fieldElem)
 	}
 }
 
@@ -111,12 +111,12 @@ func (m *marshalGen) mapstruct(s *Struct) {
 		if !m.p.ok() {
 			return
 		}
-		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
+		data = msgp.AppendString(nil, s.Fields[i].fieldTag)
 
-		m.p.printf("\n// string %q", s.Fields[i].FieldTag)
+		m.p.printf("\n// string %q", s.Fields[i].fieldTag)
 		m.Fuse(data)
 
-		next(m, s.Fields[i].FieldElem)
+		next(m, s.Fields[i].fieldElem)
 	}
 }
 
@@ -139,7 +139,7 @@ func (m *marshalGen) gMap(s *Map) {
 	m.p.printf("\nfor %s, %s := range %s {", s.Keyidx, s.Validx, vname)
 	m.rawAppend(stringTyp, literalFmt, s.Keyidx)
 	next(m, s.Value)
-	m.p.closeblock()
+	m.p.closeBlock()
 }
 
 func (m *marshalGen) gSlice(s *Slice) {
@@ -173,7 +173,7 @@ func (m *marshalGen) gPtr(p *Ptr) {
 	m.fuseHook()
 	m.p.printf("\nif %s == nil {\no = msgp.AppendNil(o)\n} else {", p.Varname())
 	next(m, p.Value)
-	m.p.closeblock()
+	m.p.closeBlock()
 }
 
 func (m *marshalGen) gBase(b *BaseElem) {
@@ -185,11 +185,11 @@ func (m *marshalGen) gBase(b *BaseElem) {
 
 	if b.Convert {
 		if b.ShimMode == Cast {
-			vname = tobaseConvert(b)
+			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
 			m.p.printf("\nvar %s %s", vname, b.BaseType())
-			m.p.printf("\n%s, err = %s", vname, tobaseConvert(b))
+			m.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			m.p.printf(errcheck)
 		}
 	}
