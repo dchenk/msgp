@@ -1,10 +1,10 @@
-package _generated
+package gen_tests
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/tinylib/msgp/msgp"
+	"github.com/dchenk/msgp/msgp"
 )
 
 func TestConvertFromEncodeError(t *testing.T) {

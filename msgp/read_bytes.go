@@ -88,7 +88,7 @@ func (r *Raw) UnmarshalMsg(b []byte) ([]byte, error) {
 	return out, nil
 }
 
-// EncodeMsg implements msgp.Encodable.
+// EncodeMsg implements msgp.Encoder.
 // It writes the raw bytes to the writer.
 // If r is empty, it writes 'nil' instead.
 func (r Raw) EncodeMsg(w *Writer) error {
@@ -99,7 +99,7 @@ func (r Raw) EncodeMsg(w *Writer) error {
 	return err
 }
 
-// DecodeMsg implements msgp.Decodable.
+// DecodeMsg implements msgp.Decoder.
 // It sets the value of *Raw to be the
 // next object on the wire.
 func (r *Raw) DecodeMsg(f *Reader) error {

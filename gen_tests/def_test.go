@@ -1,11 +1,11 @@
-package _generated
+package gen_tests
 
 import (
 	"bytes"
 	"reflect"
 	"testing"
 
-	"github.com/tinylib/msgp/msgp"
+	"github.com/dchenk/msgp/msgp"
 )
 
 func TestRuneEncodeDecode(t *testing.T) {

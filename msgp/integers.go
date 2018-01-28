@@ -1,13 +1,11 @@
 package msgp
 
 /* ----------------------------------
-	integer encoding utilities
-	(inline-able)
+	integer encoding utilities (inline-able)
 
-	TODO(tinylib): there are faster,
-	albeit non-portable solutions
-	to the code below. implement
-	byteswap?
+	TODO:
+	There are faster, albeit non-portable solutions
+	to the code below. Implement byteswap?
    ---------------------------------- */
 
 func putMint64(b []byte, i int64) {

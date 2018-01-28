@@ -1,14 +1,14 @@
-MessagePack Code Generator [![Build Status](https://travis-ci.org/tinylib/msgp.svg?branch=master)](https://travis-ci.org/tinylib/msgp)
+MessagePack Code Generator [![Build Status](https://travis-ci.org/dchenk/msgp.svg?branch=master)](https://travis-ci.org/dchenk/msgp)
 =======
 
-This is a code generation tool and serialization library for [MessagePack](http://msgpack.org). You can read more about MessagePack [in the wiki](http://github.com/tinylib/msgp/wiki), or at [msgpack.org](http://msgpack.org).
+This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki) or at [msgpack.org](https://msgpack.org).
 
-### Why?
+### Why MessagePack and This Tool?
 
 - Use Go as your schema language
 - Performance
-- [JSON interop](http://godoc.org/github.com/tinylib/msgp/msgp#CopyToJSON)
-- [User-defined extensions](http://github.com/tinylib/msgp/wiki/Using-Extensions)
+- [JSON interop](http://godoc.org/github.com/dchenk/msgp/msgp#CopyToJSON)
+- [User-defined extensions](http://github.com/dchenk/msgp/wiki/Using-Extensions)
 - Type safety
 - Encoding flexibility
 
@@ -20,13 +20,13 @@ In a source file, include the following directive:
 //go:generate msgp
 ```
 
-The `msgp` command will generate serialization methods for all exported type declarations in the file.
+The `msgp` command will generate serialization and deserialization methods for all exported type declarations in the file.
 
-You can [read more about the code generation options here](http://github.com/tinylib/msgp/wiki/Using-the-Code-Generator).
+You can [read more about the code generation options here](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator).
 
 ### Use
 
-Field names can be set in much the same way as the `encoding/json` package. For example:
+Field names can be set in much the same way as with the `encoding/json` package. For example:
 
 ```go
 type Person struct {
@@ -38,14 +38,13 @@ type Person struct {
 }
 ```
 
-By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encodable`, `msgp.Decodable`, 
-`msgp.Marshaler`, and `msgp.Unmarshaler`. Carefully-designed applications can use these methods to do
-marshalling/unmarshalling with zero heap allocations.
+By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encoder`, `msgp.Decoder`, `msgp.Marshaler`,
+and `msgp.Unmarshaler`. Carefully-designed applications can use these methods to do marshalling/unmarshalling
+with zero heap allocations.
 
-While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's
-`json.Marshaler` and `json.Unmarshaler`, `msgp.Encodable` and `msgp.Decodable` are useful for 
-stream serialization. (`*msgp.Writer` and `*msgp.Reader` are essentially protocol-aware versions
-of `*bufio.Writer` and `*bufio.Reader`, respectively.)
+While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's`json.Marshaler`
+and `json.Unmarshaler`, `msgp.Encoder` and `msgp.Decoder` are useful for stream serialization.
+(`*msgp.Writer` and `*msgp.Reader` are essentially protocol-aware versions of `*bufio.Writer` and `*bufio.Reader`.)
 
 ### Features
 
@@ -56,8 +55,7 @@ of `*bufio.Writer` and `*bufio.Reader`, respectively.)
  - Native support for Go's `time.Time`, `complex64`, and `complex128` types 
  - Generation of both `[]byte`-oriented and `io.Reader/io.Writer`-oriented methods
  - Support for arbitrary type system extensions
- - [Preprocessor directives](http://github.com/tinylib/msgp/wiki/Preprocessor-Directives)
- - File-based dependency model means fast codegen regardless of source tree size.
+ - [Preprocessor directives](http://github.com/dchenk/msgp/wiki/Preprocessor-Directives)
 
 Consider the following:
 ```go
@@ -76,15 +74,14 @@ As long as the declarations of `MyInt` and `Data` are in the same file as `Struc
 #### Extensions
 
 MessagePack supports defining your own types through "extensions," which are just a tuple of
-the data "type" (`int8`) and the raw binary. You [can see a worked example in the wiki.](http://github.com/tinylib/msgp/wiki/Using-Extensions)
+the data "type" (`int8`) and the raw binary. You can see [a worked example in the wiki.](http://github.com/dchenk/msgp/wiki/Using-Extensions)
 
 ### Status
 
 Mostly stable, in that no breaking changes have been made to the `/msgp` library in more than a year. Newer versions
-of the code may generate different code than older versions for performance reasons. I (@philhofer) am aware of a
-number of stability-critical commercial applications that use this code with good results. But, caveat emptor.
+of the code may generate different code than older versions for performance reasons.
 
-You can read more about how `msgp` maps MessagePack types onto Go types [in the wiki](http://github.com/tinylib/msgp/wiki).
+You can read more about how `msgp` maps MessagePack types onto Go types [in the wiki](http://github.com/dchenk/msgp/wiki).
 
 Here some of the known limitations/restrictions:
 
@@ -100,3 +97,16 @@ If the output compiles, then there's a pretty good chance things are fine. (Plus
 If you like benchmarks, see [here](http://bravenewgeek.com/so-you-wanna-go-fast/) and [here](https://github.com/alecthomas/go_serialization_benchmarks).
 
 As one might expect, the generated methods that deal with `[]byte` are faster for small objects, but the `io.Reader/Writer` methods are generally more memory-efficient (and, at some point, faster) for large (> 2KB) objects.
+
+## Credits
+
+This repository is a fork of [github.com/tinylib/msgp](https://github.com/tinylib/msgp). The original authors did a great job (in particular @philhofer), but
+this repository takes the project in a new direction.
+
+Differences between this tool and tinylib/msgp:
+- Here we have regular expression matching for type names in directives.
+- Here we do not use package `unsafe` for conversions from byte slices to strings: `[]byte` is converted efficiently
+to `string` simply with the built-in `string()`.
+- This codebase is thoroughly refactored to be more Go-idiomatic, efficient, and inviting to contributors.
+
+Additionally, in this library we plan to add an `omitempty` feature, like what `encoding/json` has.

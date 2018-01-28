@@ -1,28 +1,22 @@
-package _generated
+package gen_tests
 
 import (
 	"os"
 	"time"
 
-	"github.com/tinylib/msgp/msgp"
+	"github.com/dchenk/msgp/msgp"
 )
 
-//go:generate msgp -o generated.go
+//go:generate msgp
 
-// All of the struct
-// definitions in this
-// file are fed to the code
-// generator when `make test` is
-// called, followed by an
-// invocation of `go test -v` in this
-// directory. A simple way of testing
-// a struct definition is
-// by adding it to this file.
+// All of the struct definitions in this file are fed to the
+// code generator when `make test` is called, followed by an
+// invocation of `go test -v` in this directory. A simple way
+// of testing a struct definition is by adding it to this file.
 
 type Block [32]byte
 
-// tests edge-cases with
-// compiling size compilation.
+// Test edge-cases with compiling size compilation.
 type X struct {
 	Values    [32]byte    // should compile to 32*msgp.ByteSize; encoded as Bin
 	ValuesPtr *[32]byte   // check (*)[:] deref
@@ -32,8 +26,7 @@ type X struct {
 	ManyFixed []Fixed
 }
 
-// test fixed-size struct
-// size compilation
+// Test fixed-size struct size compilation.
 type Fixed struct {
 	A float64
 	B bool
@@ -70,7 +63,6 @@ type Object struct {
 }
 
 //msgp:tuple TestBench
-
 type TestBench struct {
 	Name     string
 	BirthDay time.Time
@@ -81,9 +73,8 @@ type TestBench struct {
 }
 
 //msgp:tuple TestFast
-
 type TestFast struct {
-	Lat, Long, Alt float64 // test inline decl
+	Lat, Long, Alt float64 // test inline declaration
 	Data           []byte
 }
 
@@ -105,13 +96,11 @@ type TestHidden struct {
 }
 
 type Embedded struct {
-	*Embedded   // test embedded field
+	*Embedded   // Test an embedded field.
 	Children    []Embedded
 	PtrChildren []*Embedded
 	Other       string
 }
-
-const eight = 8
 
 type Things struct {
 	Cmplx complex64                         `msg:"complex"` // test slices
@@ -121,6 +110,8 @@ type Things struct {
 	Ext   *msgp.RawExtension                `msg:"ext,extension"`  // test extension
 	Oext  msgp.RawExtension                 `msg:"oext,extension"` // test extension reference
 }
+
+// Test the shim directive:
 
 //msgp:shim SpecialID as:[]byte using:toBytes/fromBytes
 
@@ -139,8 +130,6 @@ const (
 	D
 	invalid
 )
-
-// test shim directive (below)
 
 //msgp:shim MyEnum as:string using:(MyEnum).String/myenumStr
 
@@ -185,7 +174,8 @@ func myenumStr(s string) MyEnum {
 	}
 }
 
-// test pass-specific directive
+// Test pass-specific directives:
+
 //msgp:decode ignore Insane
 
 type Insane [3]map[string]struct{ A, B CustomInt }
@@ -194,7 +184,7 @@ type Custom struct {
 	Bts   CustomBytes          `msg:"bts"`
 	Mp    map[string]*Embedded `msg:"mp"`
 	Enums []MyEnum             `msg:"enums"` // test explicit enum shim
-	Some  FileHandle           `msg:file_handle`
+	Some  FileHandle           `msg:"file_handle"`
 }
 
 type Files []*os.File
@@ -247,7 +237,6 @@ type ArrayConstants struct {
 }
 
 // Ensure non-msg struct tags work:
-// https://github.com/tinylib/msgp/issues/201
 
 type NonMsgStructTags struct {
 	A      []string `json:"fooJSON" msg:"fooMsgp"`

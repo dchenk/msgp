@@ -10,21 +10,15 @@ import (
 	"time"
 )
 
-// Sizer is an interface implemented
-// by types that can estimate their
-// size when MessagePack encoded.
-// This interface is optional, but
-// encoding/marshaling implementations
-// may use this as a way to pre-allocate
-// memory for serialization.
+// Sizer is an interface implemented by types that can estimate their
+// size when encoded to MessagePack. This interface is optional, but
+// encoding/marshaling implementations may use this as a way to
+// pre-allocate memory for serialization.
 type Sizer interface {
 	Msgsize() int
 }
 
 var (
-	// Nowhere is an io.Writer to nowhere
-	Nowhere io.Writer = nwhere{}
-
 	btsType    = reflect.TypeOf(([]byte)(nil))
 	writerPool = sync.Pool{
 		New: func() interface{} {
@@ -32,6 +26,13 @@ var (
 		},
 	}
 )
+
+// Nowhere is an io.Writer to nowhere.
+var Nowhere io.Writer = nwhere{}
+
+type nwhere struct{}
+
+func (n nwhere) Write(p []byte) (int, error) { return len(p), nil }
 
 func popWriter(w io.Writer) *Writer {
 	wr := writerPool.Get().(*Writer)
@@ -45,11 +46,9 @@ func pushWriter(wr *Writer) {
 	writerPool.Put(wr)
 }
 
-// freeW frees a writer for use
-// by other processes. It is not necessary
-// to call freeW on a writer. However, maintaining
-// a reference to a *Writer after calling freeW on
-// it will cause undefined behavior.
+// freeW frees a writer for use by other processes. It is not necessary
+// to call freeW on a writer. However, maintaining a reference to a
+// *Writer after calling freeW on it will cause undefined behavior.
 func freeW(w *Writer) { pushWriter(w) }
 
 // Require ensures that cap(old)-len(old) >= extra.
@@ -62,11 +61,9 @@ func Require(old []byte, extra int) []byte {
 	} else if l == 0 {
 		return make([]byte, 0, extra)
 	}
-	// the new size is the greater
-	// of double the old capacity
-	// and the sum of the old length
-	// and the number of new bytes
-	// necessary.
+	// The new size is the greater of double the
+	// old capacity and the sum of the old length
+	// and the number of new bytes necessary.
 	c <<= 1
 	if c < r {
 		c = r
@@ -76,34 +73,23 @@ func Require(old []byte, extra int) []byte {
 	return n
 }
 
-// nowhere writer
-type nwhere struct{}
-
-func (n nwhere) Write(p []byte) (int, error) { return len(p), nil }
-
-// Marshaler is the interface implemented
-// by types that know how to marshal themselves
-// as MessagePack. MarshalMsg appends the marshalled
-// form of the object to the provided
-// byte slice, returning the extended
+// Marshaler is the interface implemented by types that know how to
+// marshal themselves as MessagePack. MarshalMsg appends the marshalled
+// form of the object to the provided byte slice, returning the extended
 // slice and any errors encountered.
 type Marshaler interface {
 	MarshalMsg([]byte) ([]byte, error)
 }
 
-// Encodable is the interface implemented
-// by types that know how to write themselves
-// as MessagePack using a *msgp.Writer.
-type Encodable interface {
+// Encoder is the interface implemented by types that know how to write
+// themselves as MessagePack using a *msgp.Writer.
+type Encoder interface {
 	EncodeMsg(*Writer) error
 }
 
-// Writer is a buffered writer
-// that can be used to write
-// MessagePack objects to an io.Writer.
-// You must call *Writer.Flush() in order
-// to flush all of the buffered data
-// to the underlying writer.
+// Writer is a buffered writer that can be used to write MessagePack objects
+// to an io.Writer. You must call *Writer.Flush() to flush all of the
+// buffered data to the underlying writer.
 type Writer struct {
 	w    io.Writer
 	buf  []byte
@@ -120,9 +106,9 @@ func NewWriter(w io.Writer) *Writer {
 
 // NewWriterSize returns a writer with a custom buffer size.
 func NewWriterSize(w io.Writer, sz int) *Writer {
-	// we must be able to require() 18
-	// contiguous bytes, so that is the
-	// practical minimum buffer size
+
+	// We must be able to require() 18 contiguous bytes,
+	// so that is the practical minimum buffer size.
 	if sz < 18 {
 		sz = 18
 	}
@@ -131,10 +117,11 @@ func NewWriterSize(w io.Writer, sz int) *Writer {
 		w:   w,
 		buf: make([]byte, sz),
 	}
+
 }
 
-// Encode encodes an Encodable to an io.Writer.
-func Encode(w io.Writer, e Encodable) error {
+// Encode encodes an Encoder to an io.Writer.
+func Encode(w io.Writer, e Encoder) error {
 	wr := NewWriter(w)
 	err := e.EncodeMsg(wr)
 	if err == nil {
@@ -159,8 +146,7 @@ func (mw *Writer) flush() error {
 	return nil
 }
 
-// Flush flushes all of the buffered
-// data to the underlying writer.
+// Flush flushes all of the buffered data to the underlying writer.
 func (mw *Writer) Flush() error { return mw.flush() }
 
 // Buffered returns the number bytes in the write buffer
@@ -172,9 +158,9 @@ func (mw *Writer) bufsize() int { return len(mw.buf) }
 
 // NOTE: this should only be called with
 // a number that is guaranteed to be less than
-// len(mw.buf). typically, it is called with a constant.
+// len(mw.buf). Typically, it is called with a constant.
 //
-// NOTE: this is a hot code path
+// NOTE: this is a hot code path.
 func (mw *Writer) require(n int) (int, error) {
 	c := len(mw.buf)
 	wl := mw.wloc
@@ -199,7 +185,7 @@ func (mw *Writer) Append(b ...byte) error {
 	return nil
 }
 
-// push one byte onto the buffer
+// push pushes one byte onto the buffer.
 //
 // NOTE: this is a hot code path
 func (mw *Writer) push(b byte) error {
@@ -555,7 +541,7 @@ func (mw *Writer) WriteMapStrStr(mp map[string]string) (err error) {
 			return
 		}
 	}
-	return nil
+	return
 }
 
 // WriteMapStrIntf writes a map[string]interface to the writer
@@ -610,23 +596,23 @@ func (mw *Writer) WriteTime(t time.Time) error {
 //  - A map of supported types (with string keys)
 //  - An array or slice of supported types
 //  - A pointer to a supported type
-//  - A type that satisfies the msgp.Encodable interface
+//  - A type that satisfies the msgp.Encoder interface
 //  - A type that satisfies the msgp.Extension interface
 func (mw *Writer) WriteIntf(v interface{}) error {
+
 	if v == nil {
 		return mw.WriteNil()
 	}
+
 	switch v := v.(type) {
 
 	// preferred interfaces
-
-	case Encodable:
+	case Encoder:
 		return v.EncodeMsg(mw)
 	case Extension:
 		return mw.WriteExtension(v)
 
 	// concrete types
-
 	case bool:
 		return mw.WriteBool(v)
 	case float32:
@@ -732,13 +718,14 @@ func (mw *Writer) writeSlice(v reflect.Value) (err error) {
 }
 
 func (mw *Writer) writeStruct(v reflect.Value) error {
-	if enc, ok := v.Interface().(Encodable); ok {
+	if enc, ok := v.Interface().(Encoder); ok {
 		return enc.EncodeMsg(mw)
 	}
 	return fmt.Errorf("msgp: unsupported type: %s", v.Type())
 }
 
 func (mw *Writer) writeVal(v reflect.Value) error {
+
 	if !isSupported(v.Kind()) {
 		return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
 	}
@@ -747,42 +734,36 @@ func (mw *Writer) writeVal(v reflect.Value) error {
 	if v.IsNil() {
 		return mw.WriteNil()
 	}
+
 	switch v.Kind() {
 	case reflect.Bool:
 		return mw.WriteBool(v.Bool())
 
 	case reflect.Float32, reflect.Float64:
 		return mw.WriteFloat64(v.Float())
-
 	case reflect.Complex64, reflect.Complex128:
 		return mw.WriteComplex128(v.Complex())
-
 	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
 		return mw.WriteInt64(v.Int())
-
 	case reflect.Interface, reflect.Ptr:
 		if v.IsNil() {
 			mw.WriteNil()
 		}
 		return mw.writeVal(v.Elem())
-
 	case reflect.Map:
 		return mw.writeMap(v)
-
 	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
 		return mw.WriteUint64(v.Uint())
-
 	case reflect.String:
 		return mw.WriteString(v.String())
-
 	case reflect.Slice, reflect.Array:
 		return mw.writeSlice(v)
-
 	case reflect.Struct:
 		return mw.writeStruct(v)
-
 	}
+
 	return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
+
 }
 
 // is the reflect.Kind encodable?
@@ -795,10 +776,8 @@ func isSupported(k reflect.Kind) bool {
 	}
 }
 
-// GuessSize guesses the size of the underlying
-// value of 'i'. If the underlying value is not
-// a simple builtin (or []byte), GuessSize defaults
-// to 512.
+// GuessSize guesses the size of the underlying value of 'i'. If the underlying value is not
+// a simple builtin (or []byte), GuessSize defaults to 512.
 func GuessSize(i interface{}) int {
 	if i == nil {
 		return NilSize

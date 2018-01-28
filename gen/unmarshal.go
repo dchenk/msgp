@@ -14,21 +14,22 @@ func unmarshal(w io.Writer) *unmarshalGen {
 type unmarshalGen struct {
 	passes
 	p        printer
-	hasfield bool
+	hasField bool
 }
 
 func (u *unmarshalGen) Method() Method { return Unmarshal }
 
 func (u *unmarshalGen) needsField() {
-	if u.hasfield {
+	if u.hasField {
 		return
 	}
 	u.p.print("\nvar field []byte; _ = field")
-	u.hasfield = true
+	u.hasField = true
 }
 
 func (u *unmarshalGen) Execute(p Elem) error {
-	u.hasfield = false
+
+	u.hasField = false
 	if !u.p.ok() {
 		return u.p.err
 	}
@@ -36,7 +37,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
@@ -48,10 +49,11 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	u.p.nakedReturn()
 	unsetReceiver(p)
 	return u.p.err
+
 }
 
 // does assignment to the variable "name" with the type "base"
-func (u *unmarshalGen) assignAndCheck(name string, base string) {
+func (u *unmarshalGen) assignAndCheck(name, base string) {
 	if !u.p.ok() {
 		return
 	}
@@ -72,8 +74,6 @@ func (u *unmarshalGen) gStruct(s *Struct) {
 }
 
 func (u *unmarshalGen) tuple(s *Struct) {
-
-	// open block
 	sz := randIdent()
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, arrayHeader)
@@ -82,11 +82,12 @@ func (u *unmarshalGen) tuple(s *Struct) {
 		if !u.p.ok() {
 			return
 		}
-		next(u, s.Fields[i].FieldElem)
+		next(u, s.Fields[i].fieldElem)
 	}
 }
 
 func (u *unmarshalGen) mapstruct(s *Struct) {
+
 	u.needsField()
 	sz := randIdent()
 	u.p.declare(sz, u32)
@@ -95,20 +96,22 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 	u.p.printf("\nfor %s > 0 {", sz)
 	u.p.printf("\n%s--; field, bts, err = msgp.ReadMapKeyZC(bts)", sz)
 	u.p.print(errcheck)
-	u.p.print("\nswitch msgp.UnsafeString(field) {")
+	u.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
 		if !u.p.ok() {
 			return
 		}
-		u.p.printf("\ncase \"%s\":", s.Fields[i].FieldTag)
-		next(u, s.Fields[i].FieldElem)
+		u.p.printf("\ncase \"%s\":", s.Fields[i].fieldTag)
+		next(u, s.Fields[i].fieldElem)
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
 	u.p.print(errcheck)
 	u.p.print("\n}\n}") // close switch and for loop
+
 }
 
 func (u *unmarshalGen) gBase(b *BaseElem) {
+
 	if !u.p.ok() {
 		return
 	}
@@ -144,6 +147,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 		}
 		u.p.printf("}")
 	}
+
 }
 
 func (u *unmarshalGen) gArray(a *Array) {
@@ -194,12 +198,12 @@ func (u *unmarshalGen) gMap(m *Map) {
 	u.assignAndCheck(m.Keyidx, stringTyp)
 	next(u, m.Value)
 	u.p.mapAssign(m)
-	u.p.closeblock()
+	u.p.closeBlock()
 }
 
 func (u *unmarshalGen) gPtr(p *Ptr) {
 	u.p.printf("\nif msgp.IsNil(bts) { bts, err = msgp.ReadNilBytes(bts); if err != nil { return }; %s = nil; } else { ", p.Varname())
 	u.p.initPtr(p)
 	next(u, p.Value)
-	u.p.closeblock()
+	u.p.closeBlock()
 }

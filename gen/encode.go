@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/tinylib/msgp/msgp"
+	"github.com/dchenk/msgp/msgp"
 )
 
 func encode(w io.Writer) *encodeGen {
@@ -46,6 +46,7 @@ func (e *encodeGen) Fuse(b []byte) {
 }
 
 func (e *encodeGen) Execute(p Elem) error {
+
 	if !e.p.ok() {
 		return e.p.err
 	}
@@ -53,16 +54,17 @@ func (e *encodeGen) Execute(p Elem) error {
 	if p == nil {
 		return nil
 	}
-	if !IsPrintable(p) {
+	if !isPrintable(p) {
 		return nil
 	}
 
-	e.p.comment("EncodeMsg implements msgp.Encodable")
+	e.p.comment("EncodeMsg implements msgp.Encoder")
 
 	e.p.printf("\nfunc (%s %s) EncodeMsg(en *msgp.Writer) (err error) {", p.Varname(), imutMethodReceiver(p))
 	next(e, p)
 	e.p.nakedReturn()
 	return e.p.err
+
 }
 
 func (e *encodeGen) gStruct(s *Struct) {
@@ -89,7 +91,7 @@ func (e *encodeGen) tuple(s *Struct) {
 		if !e.p.ok() {
 			return
 		}
-		next(e, s.Fields[i].FieldElem)
+		next(e, s.Fields[i].fieldElem)
 	}
 }
 
@@ -116,10 +118,10 @@ func (e *encodeGen) structmap(s *Struct) {
 		if !e.p.ok() {
 			return
 		}
-		data = msgp.AppendString(nil, s.Fields[i].FieldTag)
-		e.p.printf("\n// write %q", s.Fields[i].FieldTag)
+		data = msgp.AppendString(nil, s.Fields[i].fieldTag)
+		e.p.printf("\n// write %q", s.Fields[i].fieldTag)
 		e.Fuse(data)
-		next(e, s.Fields[i].FieldElem)
+		next(e, s.Fields[i].fieldElem)
 	}
 }
 
@@ -134,7 +136,7 @@ func (e *encodeGen) gMap(m *Map) {
 	e.p.printf("\nfor %s, %s := range %s {", m.Keyidx, m.Validx, vname)
 	e.writeAndCheck(stringTyp, literalFmt, m.Keyidx)
 	next(e, m.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gPtr(s *Ptr) {
@@ -144,7 +146,7 @@ func (e *encodeGen) gPtr(s *Ptr) {
 	e.fuseHook()
 	e.p.printf("\nif %s == nil { err = en.WriteNil(); if err != nil { return; } } else {", s.Varname())
 	next(e, s.Value)
-	e.p.closeblock()
+	e.p.closeBlock()
 }
 
 func (e *encodeGen) gSlice(s *Slice) {
@@ -180,11 +182,11 @@ func (e *encodeGen) gBase(b *BaseElem) {
 	vname := b.Varname()
 	if b.Convert {
 		if b.ShimMode == Cast {
-			vname = tobaseConvert(b)
+			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
 			e.p.printf("\nvar %s %s", vname, b.BaseType())
-			e.p.printf("\n%s, err = %s", vname, tobaseConvert(b))
+			e.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			e.p.printf(errcheck)
 		}
 	}
