@@ -35,30 +35,64 @@ import (
 // as well as for exported types.
 func Run(srcPath string, outputPath string, mode Method, unexported bool) error {
 
-	if mode&^Test == 0 {
-		return errors.New("no methods to generate; -io=false and -marshal=false")
-	}
-
-	s, err := newSource(srcPath, unexported)
+	mainBuf, testsBuf, err := RunData(srcPath, mode, unexported)
 	if err != nil {
 		return err
 	}
 
+	if outputPath != "" {
+		pre := strings.TrimPrefix(outputPath, srcPath)
+		if len(pre) > 0 && !strings.HasSuffix(outputPath, ".go") {
+			outputPath = filepath.Join(srcPath, outputPath)
+		}
+	} else if stat, err := os.Stat(srcPath); err == nil && stat.IsDir() {
+		// The new file is named msgp_gen.go in the source directory.
+		outputPath = filepath.Join(srcPath, "msgp_gen.go")
+	} else {
+		// The new file name is the source file name + _gen.go
+		outputPath = strings.TrimSuffix(srcPath, ".go") + "_gen.go"
+	}
+
+	// Write the methods file concurrently with its associated test file.
+	doneErr := make(chan error, 1)
+	go func() {
+		doneErr <- formatWrite(outputPath, mainBuf.Bytes())
+	}()
+
+	if testsBuf != nil {
+		testFileName := strings.TrimSuffix(outputPath, ".go") + "_test.go"
+		if err := formatWrite(testFileName, testsBuf.Bytes()); err != nil {
+			return err
+		}
+	}
+
+	return <-doneErr
+
+}
+
+// RunData works just like Run except that, instead of writing out a file, it outputs the generated file's contents,
+// the corresponding generated test file (nil if mode does not include gen.Test), and a possibly nil error.
+func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffer, testsBuf *bytes.Buffer, err error) {
+
+	if mode&^Test == 0 {
+		err = errors.New("no methods to generate; -io=false and -marshal=false")
+		return
+	}
+
+	s, err := newSource(srcPath, unexported)
+	if err != nil {
+		return
+	}
+
 	if len(s.identities) == 0 {
-		return errors.New("no types requiring code generation were found")
+		err = errors.New("no types requiring code generation were found")
+		return
 	}
 
 	fmt.Println(chalk.Magenta.Color("======= MessagePack Code Generating ======="))
 	fmt.Printf(chalk.Magenta.Color(">>> Input: \"%s\"\n"), srcPath)
 
-	return printFile(newFilename(s.pkg, srcPath, outputPath), s, mode)
-
-}
-
-// printFile prints the methods for the provided list of methods at the given file name.
-func printFile(fileName string, s *source, mode Method) error {
-
-	mainBuf := bytes.NewBuffer(make([]byte, 0, 4096))
+	mainBuf = bytes.NewBuffer(make([]byte, 0, 4096))
 	writePkgHeader(mainBuf, s.pkg)
 
 	mainImports := []string{"github.com/dchenk/msgp/msgp"}
@@ -84,7 +118,7 @@ func printFile(fileName string, s *source, mode Method) error {
 
 	writeImportHeader(mainBuf, mainImports)
 
-	var testsBuf *bytes.Buffer
+	// Write the test file if it's needed.
 	if mode&Test == Test {
 		testsBuf = bytes.NewBuffer(make([]byte, 0, 4096))
 		writePkgHeader(testsBuf, s.pkg)
@@ -95,44 +129,9 @@ func printFile(fileName string, s *source, mode Method) error {
 		writeImportHeader(testsBuf, neededImports)
 	}
 
-	if err := s.printTo(newGeneratorSet(mode, mainBuf, testsBuf)); err != nil {
-		return err
-	}
+	err = s.printTo(newGeneratorSet(mode, mainBuf, testsBuf))
 
-	// Write the methods file concurrently with its associated test file.
-	doneErr := make(chan error, 1)
-	go func() {
-		doneErr <- formatWrite(fileName, mainBuf.Bytes())
-	}()
-
-	if testsBuf != nil {
-		testFileName := strings.TrimSuffix(fileName, ".go") + "_test.go"
-		if err := formatWrite(testFileName, testsBuf.Bytes()); err != nil {
-			return err
-		}
-	}
-
-	return <-doneErr
-
-}
-
-// newFilename picks a new file name based on input flags and the old name.
-func newFilename(pkg, old, new string) string {
-
-	if new != "" {
-		pre := strings.TrimPrefix(new, old)
-		if len(pre) > 0 && !strings.HasSuffix(new, ".go") {
-			return filepath.Join(old, new)
-		}
-		return new
-	}
-
-	if fi, err := os.Stat(old); err == nil && fi.IsDir() {
-		old = filepath.Join(old, pkg)
-	}
-
-	// The new file name is old name + _gen.go
-	return strings.TrimSuffix(old, ".go") + "_gen.go"
+	return
 
 }
 

@@ -19,8 +19,8 @@
 // There are also methods for converting MessagePack to JSON without
 // an explicit de-serialization step.
 //
-// For additional tips, tricks, and gotchas, please visit
-// the wiki at http://github.com/dchenk/msgp
+// For more tips and tricks please visit the wiki at http://github.com/dchenk/msgp
+//
 package msgp
 
 const last4 = 0x0f
