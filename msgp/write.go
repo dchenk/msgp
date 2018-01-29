@@ -27,7 +27,7 @@ var (
 	}
 )
 
-// Nowhere is an io.Writer to nowhere.
+// Nowhere is an io.Writer to nowhere (used by generated tests).
 var Nowhere io.Writer = nwhere{}
 
 type nwhere struct{}
@@ -106,18 +106,15 @@ func NewWriter(w io.Writer) *Writer {
 
 // NewWriterSize returns a writer with a custom buffer size.
 func NewWriterSize(w io.Writer, sz int) *Writer {
-
 	// We must be able to require() 18 contiguous bytes,
 	// so that is the practical minimum buffer size.
 	if sz < 18 {
 		sz = 18
 	}
-
 	return &Writer{
 		w:   w,
 		buf: make([]byte, sz),
 	}
-
 }
 
 // Encode encodes an Encoder to an io.Writer.
@@ -156,11 +153,10 @@ func (mw *Writer) avail() int { return len(mw.buf) - mw.wloc }
 
 func (mw *Writer) bufsize() int { return len(mw.buf) }
 
-// NOTE: this should only be called with
-// a number that is guaranteed to be less than
-// len(mw.buf). Typically, it is called with a constant.
+// NOTE: require should only be called with a number that is guaranteed to be
+// less than len(mw.buf). Typically, it is called with a constant.
 //
-// NOTE: this is a hot code path.
+// NOTE: This is a hot code path.
 func (mw *Writer) require(n int) (int, error) {
 	c := len(mw.buf)
 	wl := mw.wloc
@@ -186,8 +182,7 @@ func (mw *Writer) Append(b ...byte) error {
 }
 
 // push pushes one byte onto the buffer.
-//
-// NOTE: this is a hot code path
+// NOTE: This is a hot code path.
 func (mw *Writer) push(b byte) error {
 	if mw.wloc == len(mw.buf) {
 		if err := mw.flush(); err != nil {
@@ -247,8 +242,7 @@ func (mw *Writer) prefix64(b byte, u uint64) error {
 	return nil
 }
 
-// Write implements io.Writer, and writes
-// data directly to the buffer.
+// Write implements io.Writer to write directly to the buffer.
 func (mw *Writer) Write(p []byte) (int, error) {
 	l := len(p)
 	if mw.avail() < l {
@@ -263,7 +257,7 @@ func (mw *Writer) Write(p []byte) (int, error) {
 	return l, nil
 }
 
-// implements io.WriteString
+// writeString writes s to the buffer.
 func (mw *Writer) writeString(s string) error {
 	l := len(s)
 	if mw.avail() < l {
@@ -279,15 +273,14 @@ func (mw *Writer) writeString(s string) error {
 	return nil
 }
 
-// Reset changes the underlying writer used by the Writer
+// Reset resets the underlying buffer used by the Writer.
 func (mw *Writer) Reset(w io.Writer) {
 	mw.buf = mw.buf[:cap(mw.buf)]
 	mw.w = w
 	mw.wloc = 0
 }
 
-// WriteMapHeader writes a map header of the given
-// size to the writer
+// WriteMapHeader writes a map header of the given size to the buffer.
 func (mw *Writer) WriteMapHeader(sz uint32) error {
 	switch {
 	case sz <= 15:
@@ -299,8 +292,7 @@ func (mw *Writer) WriteMapHeader(sz uint32) error {
 	}
 }
 
-// WriteArrayHeader writes an array header of the
-// given size to the writer
+// WriteArrayHeader writes an array header of the given size to the buffer.
 func (mw *Writer) WriteArrayHeader(sz uint32) error {
 	switch {
 	case sz <= 15:
@@ -312,7 +304,7 @@ func (mw *Writer) WriteArrayHeader(sz uint32) error {
 	}
 }
 
-// WriteNil writes a nil byte to the buffer
+// WriteNil writes a nil byte to the buffer.
 func (mw *Writer) WriteNil() error {
 	return mw.push(mnil)
 }
@@ -766,7 +758,7 @@ func (mw *Writer) writeVal(v reflect.Value) error {
 
 }
 
-// is the reflect.Kind encodable?
+// isSupported says if k is encodable.
 func isSupported(k reflect.Kind) bool {
 	switch k {
 	case reflect.Func, reflect.Chan, reflect.Invalid, reflect.UnsafePointer:
@@ -782,7 +774,6 @@ func GuessSize(i interface{}) int {
 	if i == nil {
 		return NilSize
 	}
-
 	switch i := i.(type) {
 	case Sizer:
 		return i.Msgsize()

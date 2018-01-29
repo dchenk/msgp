@@ -1,12 +1,6 @@
 package msgp
 
-/* ----------------------------------
-	integer encoding utilities (inline-able)
-
-	TODO:
-	There are faster, albeit non-portable solutions
-	to the code below. Implement byteswap?
-   ---------------------------------- */
+// Utilities for integer encoding (inline-able)
 
 func putMint64(b []byte, i int64) {
 	b[0] = mint64
@@ -133,24 +127,22 @@ func putUnix(b []byte, sec int64, nsec int32) {
 	b[11] = byte(nsec)
 }
 
-/* -----------------------------
-		prefix utilities
-   ----------------------------- */
+// Prefix Utilities:
 
-// write prefix and uint8
+// prefixu8 writes a prefix at b[0] and the uint8 at b[1].
 func prefixu8(b []byte, pre byte, sz uint8) {
 	b[0] = pre
 	b[1] = byte(sz)
 }
 
-// write prefix and big-endian uint16
+// prefixu16 writes a prefix at b[0] and a big-endian uint16 at b[1:3].
 func prefixu16(b []byte, pre byte, sz uint16) {
 	b[0] = pre
 	b[1] = byte(sz >> 8)
 	b[2] = byte(sz)
 }
 
-// write prefix and big-endian uint32
+// prefixu32 writes a prefix at b[0] and a big-endian uint32 at b[1:5].
 func prefixu32(b []byte, pre byte, sz uint32) {
 	b[0] = pre
 	b[1] = byte(sz >> 24)
@@ -159,6 +151,7 @@ func prefixu32(b []byte, pre byte, sz uint32) {
 	b[4] = byte(sz)
 }
 
+// prefixu64 writes a prefix at b[0] and a big-endian uint32 at b[1:9].
 func prefixu64(b []byte, pre byte, sz uint64) {
 	b[0] = pre
 	b[1] = byte(sz >> 56)
