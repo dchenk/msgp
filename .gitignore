@@ -1,5 +1,5 @@
-gen_tests/*_gen.go
-gen_tests/*_gen_test.go
+tests/*_gen.go
+tests/*_gen_test.go
 msgp/defs_gen_test.go
 msgp/cover.out
 *~

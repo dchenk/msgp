@@ -12,16 +12,15 @@ import (
 
 func TestSanity(t *testing.T) {
 	if !isfixint(0) {
-		t.Fatal("WUT.")
+		t.Fatal("broken isfixint")
 	}
 }
 
 func TestReadIntf(t *testing.T) {
-	// NOTE: if you include cases
-	// with, say, int32s, the test
-	// will fail, b/c integers are
-	// always read out as int64, and
-	// unsigned integers as uint64
+
+	// NOTE: If you include cases with, say, int32s, the test
+	// will fail, b/c integers are always read out as int64, and
+	// unsigned integers as uint64.
 
 	var testCases = []interface{}{
 		float64(128.032),
@@ -45,7 +44,9 @@ func TestReadIntf(t *testing.T) {
 	enc := NewWriter(&buf)
 
 	for i, ts := range testCases {
+
 		buf.Reset()
+
 		err := enc.WriteIntf(ts)
 		if err != nil {
 			t.Errorf("Test case %d: %s", i, err)
@@ -60,7 +61,7 @@ func TestReadIntf(t *testing.T) {
 			t.Errorf("Test case: %d: %s", i, err)
 		}
 
-		/* for time, use time.Equal instead of reflect.DeepEqual */
+		// For time, use time.Equal instead of reflect.DeepEqual.
 		if tm, ok := v.(time.Time); ok {
 			if !tm.Equal(v.(time.Time)) {
 				t.Errorf("%v != %v", ts, v)
@@ -68,6 +69,7 @@ func TestReadIntf(t *testing.T) {
 		} else if !reflect.DeepEqual(v, ts) {
 			t.Errorf("%v in; %v out", ts, v)
 		}
+
 	}
 
 }
@@ -294,6 +296,7 @@ func BenchmarkReadFloat32(b *testing.B) {
 }
 
 func TestReadInt64(t *testing.T) {
+
 	var buf bytes.Buffer
 	wr := NewWriter(&buf)
 	rd := NewReader(&buf)
@@ -319,6 +322,63 @@ func TestReadInt64(t *testing.T) {
 			t.Errorf("Test case %d: put %d in and got %d out", i, num, out)
 		}
 	}
+
+}
+
+// ReadInt64 should be able to read an unsigned integer. More tests of this feature are in tests/read_int64_unsigned_test.go.
+func TestReadInt64FromUnsigned(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	wr := NewWriter(buf)
+	rd := NewReader(buf)
+
+	uint64s := []uint64{100000, 0, 5000, 8, 240, math.MaxUint16, math.MaxUint32, math.MaxInt64}
+	uint8s := []uint8{0, 8, math.MaxInt8}
+
+	for i, num := range uint64s {
+
+		buf.Reset()
+
+		err := wr.WriteUint64(num)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = wr.Flush()
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, err := rd.ReadInt64()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out != int64(num) {
+			t.Errorf("Test case with uint64 %d: put %d in and got %d out", i, num, out)
+		}
+
+	}
+
+	for i, num := range uint8s {
+
+		buf.Reset()
+
+		err := wr.WriteUint8(num)
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = wr.Flush()
+		if err != nil {
+			t.Fatal(err)
+		}
+		out, err := rd.ReadInt8()
+		if err != nil {
+			t.Fatal(err)
+		}
+		if out != int8(num) {
+			t.Errorf("Test case with uint8 %d: put %d in and got %d out", i, num, out)
+		}
+
+	}
+
 }
 
 func BenchmarkReadInt64(b *testing.B) {

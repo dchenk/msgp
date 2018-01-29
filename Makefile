@@ -1,11 +1,9 @@
-# NOTE: This Makefile is only necessary if you
-# plan on developing the msgp tool or library.
+# NOTE: This Makefile is only necessary if you would
+# like to help develop the msgp tool or library.
 # You can still install msgp with `go get` or `go install`.
 
-# generated integration test files
-GGEN = ./gen_tests/def_gen.go ./gen_tests/def_gen_test.go
+GGEN = ./tests/def_gen.go ./tests/def_gen_test.go
 
-# generated unit test files
 MGEN = ./msgp/defs_gen_test.go
 
 SHELL := /bin/bash
@@ -19,8 +17,8 @@ $(BIN): */*.go
 
 install: $(BIN)
 
-$(GGEN): ./gen_tests/def.go
-	go generate ./gen_tests
+$(GGEN): ./tests/def.go
+	go generate ./tests
 
 $(MGEN): ./msgp/defs_test.go
 	go generate ./msgp
@@ -47,5 +45,5 @@ travis:
 	go get -d -t ./...
 	go build -o "$${GOPATH%%:*}/bin/msgp" .
 	go generate ./msgp
-	go generate ./gen_tests
+	go generate ./tests
 	go test -v ./...

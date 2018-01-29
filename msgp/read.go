@@ -542,63 +542,84 @@ func (m *Reader) ReadBool() (b bool, err error) {
 	return
 }
 
-// ReadInt64 reads an int64 from the reader
-func (m *Reader) ReadInt64() (i int64, err error) {
-	var p []byte
-	var lead byte
-	p, err = m.R.Peek(1)
+// ReadInt64 reads an int64 from the reader. If an error occurs reading an int64, ReadInt64 tries to
+// instead read an unsigned integer and convert it to an int64.
+func (m *Reader) ReadInt64() (int64, error) {
+
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return 0, err
 	}
-	lead = p[0]
+	lead := p[0]
 
 	if isfixint(lead) {
-		i = int64(rfixint(lead))
 		_, err = m.R.Skip(1)
-		return
+		return int64(rfixint(lead)), err
 	} else if isnfixint(lead) {
-		i = int64(rnfixint(lead))
 		_, err = m.R.Skip(1)
-		return
+		return int64(rnfixint(lead)), err
 	}
 
 	switch lead {
 	case mint8:
 		p, err = m.R.Next(2)
 		if err != nil {
-			return
+			return 0, err
 		}
-		i = int64(getMint8(p))
-		return
-
+		return int64(getMint8(p)), nil
 	case mint16:
 		p, err = m.R.Next(3)
 		if err != nil {
-			return
+			return 0, err
 		}
-		i = int64(getMint16(p))
-		return
-
+		return int64(getMint16(p)), nil
 	case mint32:
 		p, err = m.R.Next(5)
 		if err != nil {
-			return
+			return 0, err
 		}
-		i = int64(getMint32(p))
-		return
-
+		return int64(getMint32(p)), nil
 	case mint64:
 		p, err = m.R.Next(9)
 		if err != nil {
-			return
+			return 0, err
 		}
-		i = getMint64(p)
-		return
-
-	default:
-		err = badPrefix(IntType, lead)
-		return
+		return getMint64(p), nil
+	// At this point, we can just try to read an unsigned integer.
+	case muint8:
+		p, err = m.R.Next(2)
+		if err != nil {
+			return 0, err
+		}
+		return int64(getMuint8(p)), nil
+	case muint16:
+		p, err = m.R.Next(3)
+		if err != nil {
+			return 0, err
+		}
+		return int64(getMuint16(p)), nil
+	case muint32:
+		p, err = m.R.Next(5)
+		if err != nil {
+			return 0, err
+		}
+		return int64(getMuint32(p)), nil
+	case muint64:
+		p, err = m.R.Next(9)
+		if err != nil {
+			return 0, err
+		}
+		num := getMuint64(p)
+		// Only checking for overflow with uint64 because all other (smaller) unsigned
+		// integers can fit into an int64.
+		if num > math.MaxInt64 {
+			return 0, UintOverflow{num, 64}
+		}
+		return int64(num), nil
 	}
+
+	return 0, badPrefix(IntType, lead)
+
 }
 
 // ReadInt32 reads an int32 from the reader
@@ -638,17 +659,13 @@ func (m *Reader) ReadInt8() (i int8, err error) {
 }
 
 // ReadInt reads an int from the reader
-func (m *Reader) ReadInt() (i int, err error) {
+func (m *Reader) ReadInt() (int, error) {
 	if smallint {
-		var in int32
-		in, err = m.ReadInt32()
-		i = int(in)
-		return
+		in, err := m.ReadInt32()
+		return int(in), err
 	}
-	var in int64
-	in, err = m.ReadInt64()
-	i = int(in)
-	return
+	in, err := m.ReadInt64()
+	return int(in), err
 }
 
 // ReadUint64 reads a uint64 from the reader
@@ -730,42 +747,32 @@ func (m *Reader) ReadUint16() (u uint16, err error) {
 }
 
 // ReadUint8 reads a uint8 from the reader.
-func (m *Reader) ReadUint8() (u uint8, err error) {
-	var in uint64
-	in, err = m.ReadUint64()
+func (m *Reader) ReadUint8() (uint8, error) {
+	in, err := m.ReadUint64()
 	if in > math.MaxUint8 {
-		err = UintOverflow{Value: in, FailedBitsize: 8}
-		return
+		return 0, UintOverflow{in, 8}
 	}
-	u = uint8(in)
-	return
+	return uint8(in), err
 }
 
 // ReadUint reads a uint from the reader
-func (m *Reader) ReadUint() (u uint, err error) {
+func (m *Reader) ReadUint() (uint, error) {
 	if smallint {
-		var un uint32
-		un, err = m.ReadUint32()
-		u = uint(un)
-		return
+		un, err := m.ReadUint32()
+		return uint(un), err
 	}
-	var un uint64
-	un, err = m.ReadUint64()
-	u = uint(un)
-	return
+	un, err := m.ReadUint64()
+	return uint(un), err
 }
 
 // ReadByte is analogous to ReadUint8.
 // This is *not* an implementation of io.ByteReader.
-func (m *Reader) ReadByte() (b byte, err error) {
-	var in uint64
-	in, err = m.ReadUint64()
+func (m *Reader) ReadByte() (byte, error) {
+	in, err := m.ReadUint64()
 	if in > math.MaxUint8 {
-		err = UintOverflow{Value: in, FailedBitsize: 8}
-		return
+		return 0x00, UintOverflow{in, 8}
 	}
-	b = byte(in)
-	return
+	return byte(in), err
 }
 
 // ReadBytes reads a MessagePack 'bin' object from the reader and returns its value.
@@ -808,9 +815,8 @@ func (m *Reader) ReadBytes(scratch []byte) (b []byte, err error) {
 	return
 }
 
-// ReadBytesHeader reads the size header of a MessagePack 'bin' object. The user
-// is responsible for dealing with the next 'sz' bytes from the reader in an
-// application-specific way.
+// ReadBytesHeader reads the size header of a MessagePack 'bin' object. The user is responsible
+// for dealing with the next 'sz' bytes from the reader in an application-specific way.
 func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
 	var p []byte
 	p, err = m.R.Peek(1)
@@ -824,25 +830,22 @@ func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
 			return
 		}
 		sz = uint32(p[1])
-		return
 	case mbin16:
 		p, err = m.R.Next(3)
 		if err != nil {
 			return
 		}
 		sz = uint32(big.Uint16(p[1:]))
-		return
 	case mbin32:
 		p, err = m.R.Next(5)
 		if err != nil {
 			return
 		}
 		sz = uint32(big.Uint32(p[1:]))
-		return
 	default:
 		err = badPrefix(BinType, p[0])
-		return
 	}
+	return
 }
 
 // ReadExactBytes reads a MessagePack 'bin'-encoded object off of the wire into the provided slice.

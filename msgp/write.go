@@ -347,19 +347,19 @@ func (mw *Writer) WriteInt64(i int64) error {
 	}
 }
 
-// WriteInt8 writes an int8 to the writer
+// WriteInt8 writes an int8 to the writer.
 func (mw *Writer) WriteInt8(i int8) error { return mw.WriteInt64(int64(i)) }
 
-// WriteInt16 writes an int16 to the writer
+// WriteInt16 writes an int16 to the writer.
 func (mw *Writer) WriteInt16(i int16) error { return mw.WriteInt64(int64(i)) }
 
-// WriteInt32 writes an int32 to the writer
+// WriteInt32 writes an int32 to the writer.
 func (mw *Writer) WriteInt32(i int32) error { return mw.WriteInt64(int64(i)) }
 
-// WriteInt writes an int to the writer
+// WriteInt writes an int to the writer.
 func (mw *Writer) WriteInt(i int) error { return mw.WriteInt64(int64(i)) }
 
-// WriteUint64 writes a uint64 to the writer
+// WriteUint64 writes a uint64 to the writer.
 func (mw *Writer) WriteUint64(u uint64) error {
 	switch {
 	case u <= (1<<7)-1:
@@ -375,22 +375,22 @@ func (mw *Writer) WriteUint64(u uint64) error {
 	}
 }
 
-// WriteByte is analogous to WriteUint8
+// WriteByte is analogous to WriteUint8.
 func (mw *Writer) WriteByte(u byte) error { return mw.WriteUint8(uint8(u)) }
 
-// WriteUint8 writes a uint8 to the writer
+// WriteUint8 writes a uint8 to the writer.
 func (mw *Writer) WriteUint8(u uint8) error { return mw.WriteUint64(uint64(u)) }
 
-// WriteUint16 writes a uint16 to the writer
+// WriteUint16 writes a uint16 to the writer.
 func (mw *Writer) WriteUint16(u uint16) error { return mw.WriteUint64(uint64(u)) }
 
-// WriteUint32 writes a uint32 to the writer
+// WriteUint32 writes a uint32 to the writer.
 func (mw *Writer) WriteUint32(u uint32) error { return mw.WriteUint64(uint64(u)) }
 
-// WriteUint writes a uint to the writer
+// WriteUint writes a uint to the writer.
 func (mw *Writer) WriteUint(u uint) error { return mw.WriteUint64(uint64(u)) }
 
-// WriteBytes writes binary as 'bin' to the writer
+// WriteBytes writes binary as 'bin' to the writer.
 func (mw *Writer) WriteBytes(b []byte) error {
 	sz := uint32(len(b))
 	var err error
@@ -409,9 +409,8 @@ func (mw *Writer) WriteBytes(b []byte) error {
 	return err
 }
 
-// WriteBytesHeader writes just the size header
-// of a MessagePack 'bin' object. The user is responsible
-// for then writing 'sz' more bytes into the stream.
+// WriteBytesHeader writes just the size header df a MessagePack 'bin' object.
+// The user is responsible for then writing sz more bytes into the stream.
 func (mw *Writer) WriteBytesHeader(sz uint32) error {
 	switch {
 	case sz <= math.MaxUint8:
@@ -423,7 +422,7 @@ func (mw *Writer) WriteBytesHeader(sz uint32) error {
 	}
 }
 
-// WriteBool writes a bool to the writer
+// WriteBool writes a bool to the writer.
 func (mw *Writer) WriteBool(b bool) error {
 	if b {
 		return mw.push(mtrue)

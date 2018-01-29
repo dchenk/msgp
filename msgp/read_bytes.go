@@ -335,12 +335,10 @@ func ReadBoolBytes(b []byte) (bool, []byte, error) {
 	}
 }
 
-// ReadInt64Bytes tries to read an int64
-// from 'b' and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError (not a int)
-func ReadInt64Bytes(b []byte) (i int64, o []byte, err error) {
+// ReadInt64Bytes reads an int64 from b and return the value and the remaining bytes.
+// Errors that can be returned include ErrShortBytes, UintOverflow, InvalidPrefixError, and TypeError.
+func ReadInt64Bytes(b []byte) (int64, []byte, error) {
+
 	l := len(b)
 	if l < 1 {
 		return 0, nil, ErrShortBytes
@@ -348,57 +346,55 @@ func ReadInt64Bytes(b []byte) (i int64, o []byte, err error) {
 
 	lead := b[0]
 	if isfixint(lead) {
-		i = int64(rfixint(lead))
-		o = b[1:]
-		return
+		return int64(rfixint(lead)), b[1:], nil
 	}
 	if isnfixint(lead) {
-		i = int64(rnfixint(lead))
-		o = b[1:]
-		return
+		return int64(rnfixint(lead)), b[1:], nil
 	}
 
 	switch lead {
-	case mint8:
+	case mint8, muint8:
 		if l < 2 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		i = int64(getMint8(b))
-		o = b[2:]
-		return
-
-	case mint16:
+		if lead == mint8 {
+			return int64(getMint8(b)), b[2:], nil
+		}
+		return int64(getMuint8(b)), b[2:], nil
+	case mint16, muint16:
 		if l < 3 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		i = int64(getMint16(b))
-		o = b[3:]
-		return
-
-	case mint32:
+		if lead == mint16 {
+			return int64(getMint16(b)), b[3:], nil
+		}
+		return int64(getMuint16(b)), b[3:], nil
+	case mint32, muint32:
 		if l < 5 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		i = int64(getMint32(b))
-		o = b[5:]
-		return
-
-	case mint64:
+		if lead == mint32 {
+			return int64(getMint32(b)), b[5:], nil
+		}
+		return int64(getMint32(b)), b[5:], nil
+	case mint64, muint64:
 		if l < 9 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		i = getMint64(b)
-		o = b[9:]
-		return
-
-	default:
-		err = badPrefix(IntType, lead)
-		return
+		if lead == mint64 {
+			return getMint64(b), b[9:], nil
+		}
+		num := getMuint64(b)
+		// Only checking for overflow with uint64 because all other (smaller) unsigned
+		// integers can fit into an int64.
+		if num > math.MaxInt64 {
+			return 0, b, UintOverflow{num, 64}
+		}
+		return int64(num), b[9:], nil
 	}
+
+	return 0, b, badPrefix(IntType, lead)
+
 }
 
 // ReadInt32Bytes tries to read an int32

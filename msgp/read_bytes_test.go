@@ -2,12 +2,14 @@ package msgp
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"testing"
 	"time"
 )
 
 func TestReadMapHeaderBytes(t *testing.T) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 
@@ -31,6 +33,7 @@ func TestReadMapHeaderBytes(t *testing.T) {
 			t.Errorf("%d in; %d out", v, out)
 		}
 	}
+
 }
 
 func BenchmarkReadMapHeaderBytes(b *testing.B) {
@@ -221,12 +224,14 @@ func BenchmarkReadBoolBytes(b *testing.B) {
 }
 
 func TestReadInt64Bytes(t *testing.T) {
-	var buf bytes.Buffer
-	en := NewWriter(&buf)
 
-	tests := []int64{-5, -30, 0, 1, 127, 300, 40921, 34908219}
+	buf := new(bytes.Buffer)
+	en := NewWriter(buf)
 
-	for i, v := range tests {
+	testCases := []int64{-5, -30, 0, 1, 127, 300, 40921, 34908219}
+
+	for i, v := range testCases {
+
 		buf.Reset()
 		en.WriteInt64(v)
 		en.Flush()
@@ -243,7 +248,62 @@ func TestReadInt64Bytes(t *testing.T) {
 		if out != v {
 			t.Errorf("%d in; %d out", v, out)
 		}
+
 	}
+
+}
+
+// ReadInt64Bytes should be able to read an unsigned integer. More tests of this feature are in tests/read_int64_unsigned_test.go.
+func TestReadInt64BytesFromUnsigned(t *testing.T) {
+
+	buf := new(bytes.Buffer)
+	enc := NewWriter(buf)
+
+	uint64s := []uint64{0, 1, 127, 300, 40921, 34908219, math.MaxInt64}
+	uint8s := []uint8{0, 4, 115, math.MaxInt8}
+
+	for i, v := range uint64s {
+
+		buf.Reset()
+		enc.WriteUint64(v)
+		enc.Flush()
+
+		out, left, err := ReadInt64Bytes(buf.Bytes())
+		if err != nil {
+			t.Errorf("test case %d: %s", i, err)
+		}
+
+		if len(left) != 0 {
+			t.Errorf("expected 0 bytes left; found %d", len(left))
+		}
+
+		if out != int64(v) {
+			t.Errorf("%d in; %d out", v, out)
+		}
+
+	}
+
+	for i, v := range uint8s {
+
+		buf.Reset()
+		enc.WriteUint8(v)
+		enc.Flush()
+
+		out, left, err := ReadInt8Bytes(buf.Bytes())
+		if err != nil {
+			t.Errorf("test case %d: %s", i, err)
+		}
+
+		if len(left) != 0 {
+			t.Errorf("expected 0 bytes left; found %d", len(left))
+		}
+
+		if out != int8(v) {
+			t.Errorf("%d in; %d out", v, out)
+		}
+
+	}
+
 }
 
 func TestReadUint64Bytes(t *testing.T) {
