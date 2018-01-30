@@ -634,16 +634,13 @@ func (m *Reader) ReadInt32() (i int32, err error) {
 	return
 }
 
-// ReadInt16 reads an int16 from the reader
-func (m *Reader) ReadInt16() (i int16, err error) {
-	var in int64
-	in, err = m.ReadInt64()
+// ReadInt16 reads an int16 from the reader.
+func (m *Reader) ReadInt16() (int16, error) {
+	in, err := m.ReadInt64()
 	if in > math.MaxInt16 || in < math.MinInt16 {
-		err = IntOverflow{Value: in, FailedBitsize: 16}
-		return
+		return 0, IntOverflow{Value: in, FailedBitsize: 16}
 	}
-	i = int16(in)
-	return
+	return int16(in), err // err may be nil
 }
 
 // ReadInt8 reads an int8 from the reader
