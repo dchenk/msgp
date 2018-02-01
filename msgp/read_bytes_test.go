@@ -55,12 +55,14 @@ func BenchmarkReadMapHeaderBytes(b *testing.B) {
 }
 
 func TestReadArrayHeaderBytes(t *testing.T) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 
 	tests := []uint32{0, 1, 5, 49082}
 
 	for i, v := range tests {
+
 		buf.Reset()
 		en.WriteArrayHeader(v)
 		en.Flush()
@@ -77,7 +79,9 @@ func TestReadArrayHeaderBytes(t *testing.T) {
 		if out != v {
 			t.Errorf("%d in; %d out", v, out)
 		}
+
 	}
+
 }
 
 func BenchmarkReadArrayHeaderBytes(b *testing.B) {
@@ -333,10 +337,11 @@ func TestReadUint64Bytes(t *testing.T) {
 }
 
 func TestReadBytesBytes(t *testing.T) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 
-	tests := [][]byte{[]byte{}, []byte("some bytes"), []byte("some more bytes")}
+	tests := [][]byte{{}, []byte("some bytes"), []byte("some more bytes")}
 	var scratch []byte
 
 	for i, v := range tests {
@@ -354,13 +359,15 @@ func TestReadBytesBytes(t *testing.T) {
 			t.Errorf("%q in; %q out", v, out)
 		}
 	}
+
 }
 
 func TestReadZCBytes(t *testing.T) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 
-	tests := [][]byte{[]byte{}, []byte("some bytes"), []byte("some more bytes")}
+	tests := [][]byte{{}, []byte("some bytes"), []byte("some more bytes")}
 
 	for i, v := range tests {
 		buf.Reset()
@@ -377,6 +384,7 @@ func TestReadZCBytes(t *testing.T) {
 			t.Errorf("%q in; %q out", v, out)
 		}
 	}
+
 }
 
 func TestReadZCString(t *testing.T) {

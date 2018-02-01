@@ -785,6 +785,7 @@ func BenchmarkSkip(b *testing.B) {
 }
 
 func TestCopyNext(t *testing.T) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 
@@ -827,4 +828,5 @@ func TestCopyNext(t *testing.T) {
 	if !bytes.Equal(buf.Bytes(), w.Bytes()) {
 		t.Fatalf("not equal! %v, %v", buf.Bytes(), w.Bytes())
 	}
+
 }

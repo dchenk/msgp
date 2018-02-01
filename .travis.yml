@@ -1,8 +1,9 @@
 language: go
 
 go:
-  - 1.9
-  - tip
+  - 1.8.x
+  - 1.9.x
+  - master
 
 env:
   - GIMME_ARCH=amd64
