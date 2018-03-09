@@ -63,7 +63,7 @@ func TestReadWriteFile(t *testing.T) {
 var blobstrings = []string{"", "a string", "a longer string here!"}
 var blobfloats = []float64{0.0, -1.0, 1.0, 3.1415926535}
 var blobints = []int64{0, 1, -1, 80000, 1 << 30}
-var blobbytes = [][]byte{[]byte{}, []byte("hello"), []byte("{\"is_json\":true,\"is_compact\":\"unable to determine\"}")}
+var blobbytes = [][]byte{{}, []byte("hello"), []byte("{\"is_json\":true,\"is_compact\":\"unable to determine\"}")}
 
 func BenchmarkWriteReadFile(b *testing.B) {
 

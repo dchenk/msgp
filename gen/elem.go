@@ -173,8 +173,8 @@ var primitives = map[string]primitive{
 // builtIns are types built into the library
 // that satisfy all of the interfaces.
 var builtIns = map[string]struct{}{
-	"msgp.Raw":    struct{}{},
-	"msgp.Number": struct{}{},
+	"msgp.Raw":    {},
+	"msgp.Number": {},
 }
 
 // common data/methods for every Elem
