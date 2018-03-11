@@ -1,5 +1,3 @@
-// +build linux darwin dragonfly freebsd netbsd openbsd
-
 package msgp_test
 
 import (
@@ -32,32 +30,40 @@ func TestReadWriteFile(t *testing.T) {
 
 	t.Parallel()
 
-	f, err := os.Create("tmpfile")
+	fname := "tmpfile"
+	f, err := os.Create(fname)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer func() {
 		f.Close()
-		os.Remove("tmpfile")
+		os.Remove(fname)
 	}()
 
 	data := make([]byte, 1024*1024)
-	rand.Read(data)
+	if _, err = rand.Read(data); err != nil {
+		t.Fatalf("rand reader: %v", err)
+	}
 
-	err = msgp.WriteFile(rawBytes(data), f)
+	if err = msgp.WriteFile(rawBytes(data), f); err != nil {
+		t.Fatalf("writing file: %v", err)
+	}
+	if err = f.Close(); err != nil {
+		t.Fatalf("could not close file; %v", err)
+	}
+
+	f, err = os.Open(fname)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("could not open written file; %v", err)
 	}
 
 	var out rawBytes
-	f.Seek(0, os.SEEK_SET) // TODO: SEEK_SET is deprecated
-	err = msgp.ReadFile(&out, f)
-	if err != nil {
-		t.Fatal(err)
+	if err = msgp.ReadFile(&out, f); err != nil {
+		t.Fatalf("reading file: %v", err)
 	}
 
 	if !bytes.Equal([]byte(out), data) {
-		t.Fatal("Input and output not equal.")
+		t.Fatal("Input not equal to output.")
 	}
 
 }
@@ -79,10 +85,10 @@ func BenchmarkWriteReadFile(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer func(f *os.File, name string) {
+	defer func() {
 		f.Close()
-		os.Remove(name)
-	}(f, fname)
+		os.Remove(fname)
+	}()
 
 	data := make(Blobs, b.N)
 
@@ -95,6 +101,7 @@ func BenchmarkWriteReadFile(b *testing.B) {
 
 	b.SetBytes(int64(data.Msgsize() / b.N))
 	b.ResetTimer()
+
 	err = msgp.WriteFile(data, f)
 	if err != nil {
 		b.Fatal(err)
@@ -103,4 +110,5 @@ func BenchmarkWriteReadFile(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
+
 }

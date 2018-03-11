@@ -1,5 +1,5 @@
-# NOTE: This Makefile is only necessary if you would
-# like to help develop the msgp tool or library.
+# This Makefile is necessary only if you want to help
+# develop the msgp tool or library.
 # You can still install msgp with `go get` or `go install`.
 
 GGEN = ./tests/def_gen.go ./tests/def_gen_test.go

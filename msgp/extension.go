@@ -16,7 +16,7 @@ const (
 	TimeExtension = 5
 )
 
-// our extensions live here
+// extensionReg contains registered extensions.
 var extensionReg = make(map[int8]func() Extension)
 
 // RegisterExtension registers extensions so that they can be initialized and returned

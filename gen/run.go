@@ -1,5 +1,5 @@
-// This package is the tool msgp uses to generate Go code for the types in your program that you
-// want to serialize to and from the MessagePack format. The package is designed to be usable by
+// Package gen is the tool msgp uses to generate Go code for the types in your program that you
+// want to serialize to and from the MessagePack format. This package is designed to be usable by
 // both the main.go file at the root of this repository (installed as a command line tool that is
 // called by the `go generate` command) and by external programs that import the package.
 //
@@ -11,7 +11,7 @@
 //
 //  import "github.com/dchenk/msgp/gen"
 //
-//  err := gen.Run("path/to/myfile.go", gen.Size|gen.Marshal|gen.Unmarshal|gen.Test, false)
+//  err := gen.Run("path/to/my_file.go", gen.Size|gen.Marshal|gen.Unmarshal|gen.Test, false)
 //
 package gen
 
@@ -90,7 +90,7 @@ func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffe
 	}
 
 	fmt.Println(chalk.Magenta.Color("======= MessagePack Code Generating ======="))
-	fmt.Printf(chalk.Magenta.Color(">>> Input: %q\n"), srcPath)
+	fmt.Printf(chalk.Magenta.Color("   Input: %s\n"), srcPath)
 
 	mainBuf = bytes.NewBuffer(make([]byte, 0, 4096))
 	writePkgHeader(mainBuf, s.pkg)
@@ -101,7 +101,7 @@ func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffe
 			// If the import has an alias, include it (imp.Path.Value is a quoted string).
 			// But do not include the import if its alias is the blank identifier.
 			if imp.Name.Name == "_" {
-				fmt.Printf(chalk.Blue.Color("Not including import %s with blank identifier as alias\n"), imp.Path.Value)
+				fmt.Printf(chalk.Blue.Color("Not including import %s with blank identifier as alias.\n"), imp.Path.Value)
 			} else {
 				mainImports = append(mainImports, imp.Name.Name+" "+imp.Path.Value)
 			}
@@ -123,7 +123,7 @@ func RunData(srcPath string, mode Method, unexported bool) (mainBuf *bytes.Buffe
 
 	writeImportHeader(mainBuf, mainImports)
 
-	// Write the test file if it's needed.
+	// Write the test file if it's desired.
 	if mode&Test == Test {
 		testsBuf = bytes.NewBuffer(make([]byte, 0, 4096))
 		writePkgHeader(testsBuf, s.pkg)
@@ -147,7 +147,7 @@ func formatWrite(fileName string, data []byte) error {
 	if err != nil {
 		return err
 	}
-	fmt.Printf(chalk.Magenta.Color(">>> Writing file \"%s\"\n"), fileName)
+	fmt.Printf(chalk.Magenta.Color("   Writing file: %s\n"), fileName)
 	return ioutil.WriteFile(fileName, out, 0600)
 }
 

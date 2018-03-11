@@ -1,8 +1,8 @@
-// Package msgp is the support library for the msgp code generator (http://github.com/dchenk/msgp).
+// Package msgp is the runtime support library for the msgp code generator (http://github.com/dchenk/msgp).
 //
 // This package defines the utilities used by the msgp code generator for encoding and decoding MessagePack
-// from []byte and io.Reader/io.Writer types. Much of this package is devoted to helping the msgp code
-// generator implement the Marshaler/Unmarshaler and Encoder/Decoder interfaces to avoid runtime reflection.
+// from []byte and io.Reader/io.Writer types. Most things here are intended to be used only in programs that
+// use the msgp code generator, the point being to avoid runtime reflection.
 //
 // This package defines four families of functions:
 // 	- AppendXxxx() appends an object to a []byte in MessagePack encoding.
