@@ -11,8 +11,7 @@ import (
 	"strings"
 )
 
-// A source is the in-memory representation of a either a single parsed source code
-// file or a concatenation of source code files.
+// A source represents either a single parsed source code file or a concatenation of files.
 type source struct {
 	pkg        string              // package name
 	specs      map[string]ast.Expr // type specs found in the code
@@ -23,7 +22,7 @@ type source struct {
 
 // newSource parses a file at the path provided and produces a new *source.
 // If srcPath is the path to a directory, the entire directory will be parsed.
-// If unexported is false, only exported identifiers are included in the source.
+// If unexported is true, the unexported identifiers in source will be included.
 // If the resulting source would be empty, an error is returned.
 func newSource(srcPath string, unexported bool) (*source, error) {
 
@@ -45,9 +44,9 @@ func newSource(srcPath string, unexported bool) (*source, error) {
 			return nil, err
 		}
 		if len(pkgs) != 1 {
-			return nil, fmt.Errorf("multiple packages in directory: %s", srcPath)
+			return nil, fmt.Errorf("multiple packages in directory %s", srcPath)
 		}
-		// Extract the Package from the pkgs map.
+		// Extract the package from the pkgs map.
 		var pkg *ast.Package
 		for n := range pkgs {
 			s.pkg = n
@@ -131,13 +130,11 @@ func (s *source) applyDirectives() {
 
 // A linkset is a graph of unresolved identities.
 //
-// Since Ident can only represent one level of type
-// indirection (e.g. Foo -> uint8), type declarations like `type Foo Bar`
-// aren't resolve-able until we've processed everything else.
+// Since Ident can only represent one level of type indirection (e.g. Foo -> uint8), type
+// declarations like `type Foo Bar` aren't resolve-able until we've processed everything else.
 //
-// The goal of this dependency resolution is to distill the type
-// declaration into just one level of indirection.
-// In other words, if we have:
+// The goal of this dependency resolution is to distill the type declaration into just one
+// level of indirection. So if we have:
 //
 //  type A uint64
 //  type B A
@@ -174,8 +171,7 @@ func (s *source) resolve(ls linkset) {
 
 }
 
-// process takes the contents of f.Specs and
-// uses them to populate f.Identities
+// process takes the contents of f.Specs and uses them to populate f.Identities
 func (s *source) process() {
 
 	deferred := make(linkset)
@@ -225,11 +221,8 @@ func strToMethod(s string) Method {
 	}
 }
 
+// applyDirs applies directives of the form: //msgp:encode ignore {{TypeName}}
 func (s *source) applyDirs(p generatorSet) {
-	// apply directives of the form
-	//
-	// 	//msgp:encode ignore {{TypeName}}
-	//
 loop:
 	for _, d := range s.directives {
 		chunks := strings.Split(d, " ")
@@ -324,14 +317,14 @@ func (s *source) getField(f *ast.Field) []structField {
 
 	fields := make([]structField, 1)
 	var extension bool
-	// parse tag; otherwise field name is field tag
+	// Parse the tag; otherwise the field name is field tag.
 	if f.Tag != nil {
-		body := reflect.StructTag(strings.Trim(f.Tag.Value, "`")).Get("msg")
+		body := reflect.StructTag(strings.Trim(f.Tag.Value, "`")).Get("msgp")
 		tags := strings.Split(body, ",")
 		if len(tags) == 2 && tags[1] == "extension" {
 			extension = true
 		}
-		// ignore "-" fields
+		// Ignore "-" fields.
 		if tags[0] == "-" {
 			return nil
 		}
@@ -344,7 +337,7 @@ func (s *source) getField(f *ast.Field) []structField {
 		return nil
 	}
 
-	// parse field name
+	// Parse the field name.
 	switch len(f.Names) {
 	case 0:
 		fields[0].fieldName = embedded(f.Type)
@@ -412,7 +405,7 @@ func embedded(f ast.Expr) string {
 	}
 }
 
-// stringify a field type name
+// stringify a field type name.
 func stringify(e ast.Expr) string {
 	switch e := e.(type) {
 	case *ast.Ident:
@@ -468,7 +461,7 @@ func (s *source) parseExpr(e ast.Expr) Elem {
 
 	case *ast.ArrayType:
 
-		// special case for []byte
+		// Special case for []byte
 		if e.Len == nil {
 			if i, ok := e.Elt.(*ast.Ident); ok && i.Name == "byte" {
 				return &BaseElem{Value: Bytes}
@@ -481,7 +474,7 @@ func (s *source) parseExpr(e ast.Expr) Elem {
 			return nil
 		}
 
-		// array and not a slice
+		// Check if array and not a slice
 		if e.Len != nil {
 			switch lt := e.Len.(type) {
 			case *ast.BasicLit:
@@ -521,13 +514,13 @@ func (s *source) parseExpr(e ast.Expr) Elem {
 		return Ident(stringify(e))
 
 	case *ast.InterfaceType:
-		// support `interface{}`
+		// Support `interface{}`
 		if len(e.Methods.List) == 0 {
 			return &BaseElem{Value: Intf}
 		}
 		return nil
 
-	default: // other types not supported
+	default: // Other types are not supported.
 		return nil
 	}
 }

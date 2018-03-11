@@ -26,8 +26,8 @@ func randIdent() string {
 // Consider the following:
 //
 //  type Marshaler struct {
-//  	Thing1 *float64 `msg:"thing1"`
-// 		Body   []byte   `msg:"body"`
+//  	Thing1 *float64 `msgp:"thing1"`
+// 		Body   []byte   `msgp:"body"`
 //  }
 //
 // A parser should parse the above into:
@@ -438,8 +438,8 @@ func (s *Struct) Complexity() int {
 }
 
 type structField struct {
-	fieldTag  string // the string inside the `msg:""` tag
-	rawTag    string // the full tag (in case there are non-msg keys)
+	fieldTag  string // the string inside the `msgp:""` tag
+	rawTag    string // the full tag (in case there are non-msgp keys)
 	fieldName string // the name of the struct field
 	fieldElem Elem   // the field type
 }

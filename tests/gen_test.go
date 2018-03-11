@@ -86,8 +86,8 @@ func Test1EncodeDecode(t *testing.T) {
 			"thing_two": "two",
 		},
 		Obj: struct {
-			ValueA string `msg:"value_a"`
-			ValueB []byte `msg:"value_b"`
+			ValueA string `msgp:"value_a"`
+			ValueB []byte `msgp:"value_b"`
 		}{
 			ValueA: "here's the first inner value",
 			ValueB: []byte("here's the second inner value"),

@@ -19,22 +19,18 @@ const (
 // our extensions live here
 var extensionReg = make(map[int8]func() Extension)
 
-// RegisterExtension registers extensions so that they
-// can be initialized and returned by methods that
-// decode `interface{}` values. This should only
-// be called during initialization. f() should return
-// a newly-initialized zero value of the extension. Keep in
-// mind that extensions 3, 4, and 5 are reserved for
-// complex64, complex128, and time.Time, respectively,
-// and that MessagePack reserves extension types from -127 to -1.
+// RegisterExtension registers extensions so that they can be initialized and returned
+// by methods that decode `interface{}` values. This should only be called during
+// initialization. Func f should return a newly-initialized zero value of the extension.
+// Keep in mind that extensions 3, 4, and 5 are reserved for complex64, complex128, and
+// time.Time, respectively, and that MessagePack reserves extension types from -127 to -1.
 //
 // For example, if you wanted to register a user-defined struct:
 //
 //  msgp.RegisterExtension(10, func() msgp.Extension { &MyExtension{} })
 //
-// RegisterExtension will panic if you call it multiple times
-// with the same 'typ' argument, or if you use a reserved
-// type (3, 4, or 5).
+// RegisterExtension will panic if you call it multiple times with the same 'typ' argument
+// or if you use a reserved type (3, 4, or 5).
 func RegisterExtension(typ int8, f func() Extension) {
 	switch typ {
 	case Complex64Extension, Complex128Extension, TimeExtension:
@@ -46,9 +42,8 @@ func RegisterExtension(typ int8, f func() Extension) {
 	extensionReg[typ] = f
 }
 
-// ExtensionTypeError is an error type returned
-// when there is a mis-match between an extension type
-// and the type encoded on the wire
+// ExtensionTypeError is an error type returned when there is a mis-match between an extension
+// type and the type encoded on the wire
 type ExtensionTypeError struct {
 	Got  int8
 	Want int8

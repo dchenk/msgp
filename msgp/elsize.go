@@ -1,10 +1,7 @@
 package msgp
 
-// size of every object on the wire,
-// plus type information. gives us
-// constant-time type information
-// for traversing composite objects.
-//
+// sizes gives the size of every object on the wire and type information. This gives us
+// constant-time type information for traversing composite objects.
 var sizes = [256]bytespec{
 	mnil:      {size: 1, extra: constsize, typ: NilType},
 	mfalse:    {size: 1, extra: constsize, typ: BoolType},
@@ -40,7 +37,6 @@ var sizes = [256]bytespec{
 }
 
 func init() {
-	// set up fixed fields
 
 	// fixint
 	for i := mfixint; i < 0x80; i++ {
@@ -52,8 +48,7 @@ func init() {
 		sizes[uint8(i)] = bytespec{size: 1, extra: constsize, typ: IntType}
 	}
 
-	// fixstr gets constsize,
-	// since the prefix yields the size
+	// fixstr gets constsize since the prefix yields the size
 	for i := mfixstr; i < 0xc0; i++ {
 		sizes[i] = bytespec{size: 1 + rfixstr(i), extra: constsize, typ: StrType}
 	}
@@ -67,11 +62,10 @@ func init() {
 	for i := mfixarray; i < 0xa0; i++ {
 		sizes[i] = bytespec{size: 1, extra: varmode(rfixarray(i)), typ: ArrayType}
 	}
+
 }
 
-// a valid bytespsec has
-// non-zero 'size' and
-// non-zero 'typ'
+// A valid bytespsec has non-zero size and non-zero type.
 type bytespec struct {
 	size  uint8   // prefix size information
 	extra varmode // extra size information

@@ -5,8 +5,8 @@ package msgp_test
 type Blobs []Blob
 
 type Blob struct {
-	Name   string  `msg:"name"`
-	Float  float64 `msg:"float"`
-	Bytes  []byte  `msg:"bytes"`
-	Amount int64   `msg:"amount"`
+	Name   string  `msgp:"name"`
+	Float  float64 `msgp:"float"`
+	Bytes  []byte  `msgp:"bytes"`
+	Amount int64   `msgp:"amount"`
 }

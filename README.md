@@ -29,10 +29,10 @@ Field names can be set in much the same way as with the `encoding/json` package.
 
 ```go
 type Person struct {
-    Name       string `msg:"name"`
-    Address    string `msg:"address"`
-    Age        int    `msg:"age"`
-    Hidden     string `msg:"-"` // this field is ignored
+    Name       string `msgp:"name"`
+    Address    string `msgp:"address"`
+    Age        int    `msgp:"age"`
+    Hidden     string `msgp:"-"` // this field is ignored
     unexported bool             // this field is also ignored
 }
 ```
@@ -63,9 +63,9 @@ type MyInt int
 type Data []byte
 
 type Struct struct {
-    Which  map[string]*MyInt `msg:"which"`
-    Other  Data              `msg:"other"`
-    Nums   [Eight]float64    `msg:"nums"`
+    Which  map[string]*MyInt `msgp:"which"`
+    Other  Data              `msgp:"other"`
+    Nums   [Eight]float64    `msgp:"nums"`
 }
 ```
 As long as the declarations of `MyInt` and `Data` are in the same file as `Struct`, the parser will determine that the type information for `MyInt` and `Data` can be passed into the definition of `Struct` before its methods are generated.
