@@ -29,6 +29,7 @@ func (r *rawBytes) UnmarshalMsg(b []byte) ([]byte, error) {
 }
 
 func TestReadWriteFile(t *testing.T) {
+
 	t.Parallel()
 
 	f, err := os.Create("tmpfile")
@@ -49,25 +50,26 @@ func TestReadWriteFile(t *testing.T) {
 	}
 
 	var out rawBytes
-	f.Seek(0, os.SEEK_SET)
+	f.Seek(0, os.SEEK_SET) // TODO: SEEK_SET is deprecated
 	err = msgp.ReadFile(&out, f)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if !bytes.Equal([]byte(out), []byte(data)) {
+	if !bytes.Equal([]byte(out), data) {
 		t.Fatal("Input and output not equal.")
 	}
+
 }
 
 var blobstrings = []string{"", "a string", "a longer string here!"}
 var blobfloats = []float64{0.0, -1.0, 1.0, 3.1415926535}
 var blobints = []int64{0, 1, -1, 80000, 1 << 30}
-var blobbytes = [][]byte{{}, []byte("hello"), []byte("{\"is_json\":true,\"is_compact\":\"unable to determine\"}")}
+var blobbytes = [][]byte{{}, []byte("hello"), []byte(`{"is_json":true, "is_compact":"unable to determine"}`)}
 
 func BenchmarkWriteReadFile(b *testing.B) {
 
-	// let's not run out of disk space...
+	// Let's not run out of disk space.
 	if b.N > 10000000 {
 		b.N = 10000000
 	}

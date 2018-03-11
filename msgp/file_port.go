@@ -7,14 +7,6 @@ import (
 	"os"
 )
 
-// MarshalSizer is the combination
-// of the Marshaler and Sizer
-// interfaces.
-type MarshalSizer interface {
-	Marshaler
-	Sizer
-}
-
 func ReadFile(dst Unmarshaler, file *os.File) error {
 	if u, ok := dst.(Decoder); ok {
 		return u.DecodeMsg(NewReader(file))

@@ -10,10 +10,9 @@ import (
 	"time"
 )
 
-// Sizer is an interface implemented by types that can estimate their
-// size when encoded to MessagePack. This interface is optional, but
-// encoding/marshaling implementations may use this as a way to
-// pre-allocate memory for serialization.
+// Sizer is an interface implemented by types that can estimate their size when
+// encoded to MessagePack. This interface is optional, but encoding/marshaling
+// implementations may use this as a way to pre-allocate memory for serialization.
 type Sizer interface {
 	Msgsize() int
 }
@@ -51,45 +50,27 @@ func pushWriter(wr *Writer) {
 // *Writer after calling freeW on it will cause undefined behavior.
 func freeW(w *Writer) { pushWriter(w) }
 
-// Require ensures that cap(old)-len(old) >= extra.
-func Require(old []byte, extra int) []byte {
-	l := len(old)
-	c := cap(old)
-	r := l + extra
-	if c >= r {
-		return old
-	} else if l == 0 {
-		return make([]byte, 0, extra)
-	}
-	// The new size is the greater of double the
-	// old capacity and the sum of the old length
-	// and the number of new bytes necessary.
-	c <<= 1
-	if c < r {
-		c = r
-	}
-	n := make([]byte, l, c)
-	copy(n, old)
-	return n
-}
-
-// Marshaler is the interface implemented by types that know how to
-// marshal themselves as MessagePack. MarshalMsg appends the marshalled
-// form of the object to the provided byte slice, returning the extended
-// slice and any errors encountered.
+// Marshaler is the interface implemented by types that know how to marshal themselves
+// as MessagePack. MarshalMsg appends the marshalled form of the object to the provided
+// byte slice, returning the extended slice and any errors encountered.
 type Marshaler interface {
 	MarshalMsg([]byte) ([]byte, error)
 }
 
-// Encoder is the interface implemented by types that know how to write
-// themselves as MessagePack using a *msgp.Writer.
+// Encoder is the interface implemented by types that know how to write themselves
+// as MessagePack using a *msgp.Writer.
 type Encoder interface {
 	EncodeMsg(*Writer) error
 }
 
-// Writer is a buffered writer that can be used to write MessagePack objects
-// to an io.Writer. You must call *Writer.Flush() to flush all of the
-// buffered data to the underlying writer.
+// MarshalSizer combines the Marshaler and Sizer interfaces.
+type MarshalSizer interface {
+	Marshaler
+	Sizer
+}
+
+// Writer is a buffered writer that can be used to write MessagePack objects to an io.Writer.
+// You must call *Writer.Flush() to flush all of the buffered data to the underlying writer.
 type Writer struct {
 	w    io.Writer
 	buf  []byte
@@ -126,6 +107,28 @@ func Encode(w io.Writer, e Encoder) error {
 	}
 	freeW(wr)
 	return err
+}
+
+// Require ensures that cap(old)-len(old) >= extra.
+func Require(old []byte, extra int) []byte {
+	l := len(old)
+	c := cap(old)
+	r := l + extra
+	if c >= r {
+		return old
+	} else if l == 0 {
+		return make([]byte, 0, extra)
+	}
+	// The new size is the greater of double the
+	// old capacity and the sum of the old length
+	// and the number of new bytes necessary.
+	c <<= 1
+	if c < r {
+		c = r
+	}
+	n := make([]byte, l, c)
+	copy(n, old)
+	return n
 }
 
 func (mw *Writer) flush() error {
