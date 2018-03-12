@@ -10,7 +10,7 @@ SHELL := /bin/bash
 
 BIN = $(GOBIN)/msgp
 
-.PHONY: clean wipe install get-deps bench all
+.PHONY: fmt clean wipe install get-deps bench all
 
 $(BIN): */*.go
 	@go install ./...
@@ -22,6 +22,9 @@ $(GGEN): ./tests/def.go
 
 $(MGEN): ./msgp/defs_test.go
 	go generate ./msgp
+
+fmt:
+	gofmt -s -w -e ./
 
 test: all
 	go test -v ./...

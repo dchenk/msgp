@@ -54,37 +54,30 @@ func (e ExtensionTypeError) Error() string {
 	return fmt.Sprintf("msgp: error decoding extension: wanted type %d; got type %d", e.Want, e.Got)
 }
 
-// Resumable returns 'true' for ExtensionTypeErrors
+// Resumable returns true for ExtensionTypeErrors.
 func (e ExtensionTypeError) Resumable() bool { return true }
 
 func errExt(got int8, wanted int8) error {
 	return ExtensionTypeError{Got: got, Want: wanted}
 }
 
-// Extension is the interface fulfilled
-// by types that want to define their
-// own binary encoding.
+// Extension is the interface implemented by types that want to define their own binary encoding.
 type Extension interface {
-	// ExtensionType should return
-	// a int8 that identifies the concrete
-	// type of the extension. (Types <0 are
-	// officially reserved by the MessagePack
-	// specifications.)
+	// ExtensionType returns an int8 that identifies the extension's concrete type.
+	// (Types <0 are reserved by the MessagePack specification.)
 	ExtensionType() int8
 
-	// Len should return the length
-	// of the data to be encoded
+	// Len returns the length of the data to be encoded.
 	Len() int
 
-	// MarshalBinaryTo should copy
-	// the data into the supplied slice,
-	// assuming that the slice has length Len()
+	// MarshalBinaryTo copies the data into the supplied slice, assuming that the
+	// slice has length Len().
 	MarshalBinaryTo([]byte) error
 
 	UnmarshalBinary([]byte) error
 }
 
-// RawExtension implements the Extension interface
+// RawExtension implements the Extension interface.
 type RawExtension struct {
 	Data []byte
 	Type int8
@@ -93,18 +86,17 @@ type RawExtension struct {
 // ExtensionType implements Extension.ExtensionType, and returns r.Type
 func (r *RawExtension) ExtensionType() int8 { return r.Type }
 
-// Len implements Extension.Len, and returns len(r.Data)
+// Len implements Extension.Len.
 func (r *RawExtension) Len() int { return len(r.Data) }
 
-// MarshalBinaryTo implements Extension.MarshalBinaryTo,
-// and returns a copy of r.Data
+// MarshalBinaryTo implements Extension.MarshalBinaryTo and returns a copy of r.Data.
 func (r *RawExtension) MarshalBinaryTo(d []byte) error {
 	copy(d, r.Data)
 	return nil
 }
 
-// UnmarshalBinary implements Extension.UnmarshalBinary,
-// and sets r.Data to the contents of the provided slice
+// UnmarshalBinary implements Extension.UnmarshalBinary and sets r.Data to the contents
+// of the provided slice.
 func (r *RawExtension) UnmarshalBinary(b []byte) error {
 	if cap(r.Data) >= len(b) {
 		r.Data = r.Data[0:len(b)]
@@ -115,7 +107,7 @@ func (r *RawExtension) UnmarshalBinary(b []byte) error {
 	return nil
 }
 
-// WriteExtension writes an extension type to the writer
+// WriteExtension writes an extension type to the writer.
 func (mw *Writer) WriteExtension(e Extension) error {
 	l := e.Len()
 	var err error
@@ -218,8 +210,7 @@ func (mw *Writer) WriteExtension(e Extension) error {
 	return nil
 }
 
-// peek at the extension type, assuming the next
-// kind to be read is Extension
+// peek at the extension type, assuming the next kind to be read is Extension.
 func (m *Reader) peekExtensionType() (int8, error) {
 	p, err := m.R.Peek(2)
 	if err != nil {
@@ -262,19 +253,16 @@ func peekExtension(b []byte) (int8, error) {
 	return int8(b[size-1]), nil
 }
 
-// ReadExtension reads the next object from the reader
-// as an extension. ReadExtension will fail if the next
-// object in the stream is not an extension, or if
-// e.Type() is not the same as the wire type.
+// ReadExtension reads the next object from the reader as an extension. ReadExtension will fail if
+// the next object in the stream is not an extension, or if e.Type() is not the same as the wire type.
 func (m *Reader) ReadExtension(e Extension) (err error) {
-	var p []byte
-	p, err = m.R.Peek(2)
+
+	p, err := m.R.Peek(2)
 	if err != nil {
 		return
 	}
 	lead := p[0]
-	var read int
-	var off int
+	var read, off int
 	switch lead {
 	case mfixext1:
 		if int8(p[1]) != e.ExtensionType() {

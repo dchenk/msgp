@@ -16,12 +16,10 @@ var (
 
 var defuns [_maxtype]func(jsWriter, *Reader) (int, error)
 
-// note: there is an initialization loop if
-// this isn't set up during init()
+// Note: there is an initialization loop if this isn't set up during init()
 func init() {
-	// since none of these functions are inline-able,
-	// there is not much of a penalty to the indirect
-	// call. however, this is best expressed as a jump-table...
+	// Since none of these functions are inline-able, there is not much of a
+	// penalty to the indirect call. However, this is best expressed as a jump-table.
 	defuns = [_maxtype]func(jsWriter, *Reader) (int, error){
 		StrType:        rwString,
 		BinType:        rwBytes,
@@ -40,26 +38,24 @@ func init() {
 	}
 }
 
-// this is the interface
-// used to write json
+// jsWriter is the interface used to write JSON.
 type jsWriter interface {
 	io.Writer
 	io.ByteWriter
 	WriteString(string) (int, error)
 }
 
-// CopyToJSON reads MessagePack from 'src' and copies it
-// as JSON to 'dst' until EOF.
+// CopyToJSON reads MessagePack from src and copies it as JSON to dst until EOF.
 func CopyToJSON(dst io.Writer, src io.Reader) (n int64, err error) {
 	r := NewReader(src)
 	n, err = r.WriteToJSON(dst)
-	freeR(r)
+	readerPool.Put(r)
 	return
 }
 
-// WriteToJSON translates MessagePack from 'r' and writes it as
-// JSON to 'w' until the underlying reader returns io.EOF. It returns
-// the number of bytes written, and an error if it stopped before EOF.
+// WriteToJSON translates MessagePack from r and writes it as JSON to w until the underlying
+// reader returns io.EOF. WriteToJSON returns the number of bytes written, and an error if
+// it stopped before EOF.
 func (r *Reader) WriteToJSON(w io.Writer) (n int64, err error) {
 	var j jsWriter
 	var bf *bufio.Writer
@@ -266,8 +262,7 @@ func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
 		return 0, err
 	}
 
-	// registered extensions can override
-	// the JSON encoding
+	// Registered extensions can override the JSON encoding.
 	if j, ok := extensionReg[et]; ok {
 		var bts []byte
 		e := j()
@@ -410,7 +405,7 @@ func rwBytes(dst jsWriter, src *Reader) (n int, err error) {
 // Below (c) The Go Authors, 2009-2014
 // Subject to the BSD-style license found at http://golang.org
 //
-// see: encoding/json/encode.go:(*encodeState).stringbytes()
+// See: encoding/json/encode.go:(*encodeState).stringbytes()
 func rwquoted(dst jsWriter, s []byte) (n int, err error) {
 	var nn int
 	err = dst.WriteByte('"')

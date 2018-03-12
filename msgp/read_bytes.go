@@ -9,10 +9,8 @@ import (
 
 var big = binary.BigEndian
 
-// NextType returns the type of the next
-// object in the slice. If the length
-// of the input is zero, it returns
-// InvalidType.
+// NextType returns the type of the next object in the slice. If the length of the input is zero,
+// it returns InvalidType.
 func NextType(b []byte) Type {
 	if len(b) == 0 {
 		return InvalidType
@@ -40,9 +38,7 @@ func NextType(b []byte) Type {
 	return t
 }
 
-// IsNil returns true if len(b)>0 and
-// the leading byte is a 'nil' MessagePack
-// byte; false otherwise
+// IsNil returns true if len(b)>0 and the leading byte is a "nil" MessagePack byte (0xc0).
 func IsNil(b []byte) bool {
 	if len(b) != 0 && b[0] == mnil {
 		return true
@@ -50,15 +46,12 @@ func IsNil(b []byte) bool {
 	return false
 }
 
-// Raw is raw MessagePack.
-// Raw allows you to read and write
-// data without interpreting its contents.
+// Raw is raw encoded MessagePack. It implements Marshaler, Unmarshaler, Encoder, Decoder, and Sizer.
+// Raw allows you to read and write data without interpreting the contents.
 type Raw []byte
 
-// MarshalMsg implements msgp.Marshaler.
-// It appends the raw contents of 'raw'
-// to the provided byte slice. If 'raw'
-// is 0 bytes, 'nil' will be appended instead.
+// MarshalMsg implements msgp.Marshaler. It appends the raw contents of r to the provided byte slice.
+// If r is empty, then "nil" (0xc0) is appended instead.
 func (r Raw) MarshalMsg(b []byte) ([]byte, error) {
 	i := len(r)
 	if i == 0 {
@@ -69,9 +62,8 @@ func (r Raw) MarshalMsg(b []byte) ([]byte, error) {
 	return o, nil
 }
 
-// UnmarshalMsg implements msgp.Unmarshaler.
-// It sets the contents of *Raw to be the next
-// object in the provided byte slice.
+// UnmarshalMsg implements msgp.Unmarshaler. It sets the contents of r to be the next object in the
+// provided byte slice.
 func (r *Raw) UnmarshalMsg(b []byte) ([]byte, error) {
 	l := len(b)
 	out, err := Skip(b)
@@ -88,9 +80,8 @@ func (r *Raw) UnmarshalMsg(b []byte) ([]byte, error) {
 	return out, nil
 }
 
-// EncodeMsg implements msgp.Encoder.
-// It writes the raw bytes to the writer.
-// If r is empty, it writes 'nil' instead.
+// EncodeMsg implements msgp.Encoder. It writes the raw bytes to the writer. If r is empty, then "nil" (0xc0) is
+// written instead.
 func (r Raw) EncodeMsg(w *Writer) error {
 	if len(r) == 0 {
 		return w.WriteNil()
@@ -99,9 +90,7 @@ func (r Raw) EncodeMsg(w *Writer) error {
 	return err
 }
 
-// DecodeMsg implements msgp.Decoder.
-// It sets the value of *Raw to be the
-// next object on the wire.
+// DecodeMsg implements msgp.Decoder. It sets the value of r to be the next object on the wire.
 func (r *Raw) DecodeMsg(f *Reader) error {
 	*r = (*r)[:0]
 	return appendNext(f, (*[]byte)(r))
@@ -137,15 +126,14 @@ func appendNext(f *Reader, d *[]byte) error {
 	return nil
 }
 
-// MarshalJSON implements json.Marshaler
+// MarshalJSON implements json.Marshaler.
 func (r *Raw) MarshalJSON() ([]byte, error) {
 	var buf bytes.Buffer
 	_, err := UnmarshalAsJSON(&buf, []byte(*r))
 	return buf.Bytes(), err
 }
 
-// ReadMapHeaderBytes reads a map header size
-// from 'b' and returns the remaining bytes.
+// ReadMapHeaderBytes reads a map header size from b and returns the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a map)
@@ -188,8 +176,7 @@ func ReadMapHeaderBytes(b []byte) (sz uint32, o []byte, err error) {
 	}
 }
 
-// ReadMapKeyZC attempts to read a map key
-// from 'b' and returns the key bytes and the remaining bytes
+// ReadMapKeyZC attempts to read a map key from b and returns the key bytes and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a str or bin)
@@ -204,9 +191,8 @@ func ReadMapKeyZC(b []byte) ([]byte, []byte, error) {
 	return o, b, nil
 }
 
-// ReadArrayHeaderBytes attempts to read
-// the array header size off of 'b' and return
-// the size and remaining bytes.
+// ReadArrayHeaderBytes attempts to read the array header size off of b and return the size
+// and remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not an array)
@@ -246,8 +232,7 @@ func ReadArrayHeaderBytes(b []byte) (sz uint32, o []byte, err error) {
 	}
 }
 
-// ReadNilBytes tries to read a "nil" byte
-// off of 'b' and return the remaining bytes.
+// ReadNilBytes tries to read a "nil" byte off of b and return the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a 'nil')
@@ -262,8 +247,7 @@ func ReadNilBytes(b []byte) ([]byte, error) {
 	return b[1:], nil
 }
 
-// ReadFloat64Bytes tries to read a float64
-// from 'b' and return the value and the remaining bytes.
+// ReadFloat64Bytes tries to read a float64 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a float64)
@@ -295,8 +279,7 @@ func ReadFloat64Bytes(b []byte) (f float64, o []byte, err error) {
 	return
 }
 
-// ReadFloat32Bytes tries to read a float64
-// from 'b' and return the value and the remaining bytes.
+// ReadFloat32Bytes tries to read a float64 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a float32)
@@ -316,8 +299,7 @@ func ReadFloat32Bytes(b []byte) (f float32, o []byte, err error) {
 	return
 }
 
-// ReadBoolBytes tries to read a float64
-// from 'b' and return the value and the remaining bytes.
+// ReadBoolBytes tries to read a float64 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a bool)
@@ -397,8 +379,7 @@ func ReadInt64Bytes(b []byte) (int64, []byte, error) {
 
 }
 
-// ReadInt32Bytes tries to read an int32
-// from 'b' and return the value and the remaining bytes.
+// ReadInt32Bytes tries to read an int32 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a int)
@@ -411,8 +392,7 @@ func ReadInt32Bytes(b []byte) (int32, []byte, error) {
 	return int32(i), o, err
 }
 
-// ReadInt16Bytes tries to read an int16
-// from 'b' and return the value and the remaining bytes.
+// ReadInt16Bytes tries to read an int16 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a int)
@@ -425,8 +405,7 @@ func ReadInt16Bytes(b []byte) (int16, []byte, error) {
 	return int16(i), o, err
 }
 
-// ReadInt8Bytes tries to read an int16
-// from 'b' and return the value and the remaining bytes.
+// ReadInt8Bytes tries to read an int16 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a int)
@@ -439,8 +418,7 @@ func ReadInt8Bytes(b []byte) (int8, []byte, error) {
 	return int8(i), o, err
 }
 
-// ReadIntBytes tries to read an int
-// from 'b' and return the value and the remaining bytes.
+// ReadIntBytes tries to read an int from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a int)
@@ -454,8 +432,7 @@ func ReadIntBytes(b []byte) (int, []byte, error) {
 	return int(i), b, err
 }
 
-// ReadUint64Bytes tries to read a uint64
-// from 'b' and return the value and the remaining bytes.
+// ReadUint64Bytes tries to read a uint64 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a uint)
@@ -515,8 +492,7 @@ func ReadUint64Bytes(b []byte) (u uint64, o []byte, err error) {
 	}
 }
 
-// ReadUint32Bytes tries to read a uint32
-// from 'b' and return the value and the remaining bytes.
+// ReadUint32Bytes tries to read a uint32 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a uint)
@@ -529,8 +505,7 @@ func ReadUint32Bytes(b []byte) (uint32, []byte, error) {
 	return uint32(v), o, err
 }
 
-// ReadUint16Bytes tries to read a uint16
-// from 'b' and return the value and the remaining bytes.
+// ReadUint16Bytes tries to read a uint16 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a uint)
@@ -543,8 +518,7 @@ func ReadUint16Bytes(b []byte) (uint16, []byte, error) {
 	return uint16(v), o, err
 }
 
-// ReadUint8Bytes tries to read a uint8
-// from 'b' and return the value and the remaining bytes.
+// ReadUint8Bytes tries to read a uint8 from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a uint)
@@ -557,8 +531,7 @@ func ReadUint8Bytes(b []byte) (uint8, []byte, error) {
 	return uint8(v), o, err
 }
 
-// ReadUintBytes tries to read a uint
-// from 'b' and return the value and the remaining bytes.
+// ReadUintBytes tries to read a uint from b and return the value and the remaining bytes.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a uint)
@@ -577,9 +550,7 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 	return ReadUint8Bytes(b)
 }
 
-// ReadBytesBytes reads a 'bin' object
-// from 'b' and returns its vaue and
-// the remaining bytes in 'b'.
+// ReadBytesBytes reads a 'bin' object from b and returns its value and the remaining bytes in b.
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a 'bin' object)
@@ -648,8 +619,7 @@ func readBytesBytes(b []byte, scratch []byte, zc bool) (v []byte, o []byte, err 
 	return
 }
 
-// ReadBytesZC extracts the messagepack-encoded
-// binary field without copying. The returned []byte
+// ReadBytesZC extracts the MessagePack-encoded binary field without copying. The returned []byte
 // points to the same memory as the input slice.
 // Possible errors:
 // - ErrShortBytes (b not long enough)

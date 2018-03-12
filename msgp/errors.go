@@ -5,8 +5,8 @@ import (
 	"reflect"
 )
 
-// ErrShortBytes is returned when the slice being decoded is too short
-// to contain the contents of the message.
+// ErrShortBytes is returned when the slice being decoded is too short to contain
+// the contents of the message.
 var ErrShortBytes error = errShort{}
 
 // A fatal error is only returned if we reach code that should be unreachable.
@@ -30,14 +30,12 @@ type errFatal struct{}
 func (f errFatal) Error() string   { return "msgp: fatal decoding error (unreachable code)" }
 func (f errFatal) Resumable() bool { return false }
 
-// ArrayError is an error returned when decoding a fix-sized array
-// of the wrong size.
+// An ArrayError error is returned when decoding a fix-sized array of the wrong size.
 type ArrayError struct {
-	Wanted uint32
-	Got    uint32
+	Wanted, Got uint32
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (a ArrayError) Error() string {
 	return fmt.Sprintf("msgp: wanted array of size %d; got %d", a.Wanted, a.Got)
 }
@@ -45,14 +43,14 @@ func (a ArrayError) Error() string {
 // Resumable is always true for ArrayErrors.
 func (a ArrayError) Resumable() bool { return true }
 
-// IntOverflow is returned when a call would downcast an integer to a type
+// An IntOverflow error is returned when an operation would downcast an integer to a type
 // with too few bits to hold its value.
 type IntOverflow struct {
 	Value         int64 // the value of the integer
 	FailedBitsize int   // the bit size that the int64 could not fit into
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (i IntOverflow) Error() string {
 	return fmt.Sprintf("msgp: %d overflows int%d", i.Value, i.FailedBitsize)
 }
@@ -60,8 +58,8 @@ func (i IntOverflow) Error() string {
 // Resumable is always true for overflows.
 func (i IntOverflow) Resumable() bool { return true }
 
-// UintOverflow is returned when a call would downcast an unsigned integer to
-// a type with too few bits to hold its value
+// A UintOverflow error is returned when an operation would downcast an unsigned integer to
+// a type with too few bits to hold its value.
 type UintOverflow struct {
 	Value         uint64 // value of the uint
 	FailedBitsize int    // the bit size that couldn't fit the value
@@ -122,5 +120,5 @@ type ErrUnsupportedType struct {
 // Error implements error
 func (e *ErrUnsupportedType) Error() string { return fmt.Sprintf("msgp: type %q not supported", e.T) }
 
-// Resumable returns 'true' for ErrUnsupportedType
+// Resumable returns true for ErrUnsupportedType.
 func (e *ErrUnsupportedType) Resumable() bool { return true }
