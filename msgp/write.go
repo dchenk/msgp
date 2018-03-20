@@ -6,7 +6,6 @@ import (
 	"io"
 	"math"
 	"reflect"
-	"sync"
 	"time"
 )
 
@@ -17,14 +16,7 @@ type Sizer interface {
 	Msgsize() int
 }
 
-var (
-	btsType    = reflect.TypeOf(([]byte)(nil))
-	writerPool = sync.Pool{
-		New: func() interface{} {
-			return &Writer{buf: make([]byte, 2048)}
-		},
-	}
-)
+var btsType = reflect.TypeOf(([]byte)(nil))
 
 // Nowhere is an io.Writer to nowhere (used by generated tests).
 var Nowhere io.Writer = nwhere{}
@@ -32,23 +24,6 @@ var Nowhere io.Writer = nwhere{}
 type nwhere struct{}
 
 func (n nwhere) Write(p []byte) (int, error) { return len(p), nil }
-
-func popWriter(w io.Writer) *Writer {
-	wr := writerPool.Get().(*Writer)
-	wr.Reset(w)
-	return wr
-}
-
-func pushWriter(wr *Writer) {
-	wr.w = nil
-	wr.wloc = 0
-	writerPool.Put(wr)
-}
-
-// freeW frees a writer for use by other processes. It is not necessary
-// to call freeW on a writer. However, maintaining a reference to a
-// *Writer after calling freeW on it will cause undefined behavior.
-func freeW(w *Writer) { pushWriter(w) }
 
 // Marshaler is the interface implemented by types that know how to marshal themselves
 // as MessagePack. MarshalMsg appends the marshalled form of the object to the provided
@@ -77,15 +52,18 @@ type Writer struct {
 	wloc int
 }
 
-// NewWriter returns a new *Writer.
+// NewWriter creates a new Writer.
 func NewWriter(w io.Writer) *Writer {
-	if wr, ok := w.(*Writer); ok {
+	if wr, ok := w.(*Writer); ok && w != nil {
 		return wr
 	}
-	return popWriter(w)
+	return &Writer{
+		buf: make([]byte, 2048),
+		w:   w,
+	}
 }
 
-// NewWriterSize returns a writer with a custom buffer size.
+// NewWriterSize creates a Writer with a custom buffer size.
 func NewWriterSize(w io.Writer, sz int) *Writer {
 	// We must be able to require() 18 contiguous bytes,
 	// so that is the practical minimum buffer size.
@@ -98,14 +76,13 @@ func NewWriterSize(w io.Writer, sz int) *Writer {
 	}
 }
 
-// Encode encodes an Encoder to an io.Writer.
+// Encode encodes an Encoder to any io.Writer.
 func Encode(w io.Writer, e Encoder) error {
 	wr := NewWriter(w)
 	err := e.EncodeMsg(wr)
 	if err == nil {
 		err = wr.Flush()
 	}
-	freeW(wr)
 	return err
 }
 
@@ -119,9 +96,8 @@ func Require(old []byte, extra int) []byte {
 	} else if l == 0 {
 		return make([]byte, 0, extra)
 	}
-	// The new size is the greater of double the
-	// old capacity and the sum of the old length
-	// and the number of new bytes necessary.
+	// The new size is the greater of double the old capacity and
+	// the sum of the old length and the number of new bytes needed.
 	c <<= 1
 	if c < r {
 		c = r
@@ -185,7 +161,6 @@ func (mw *Writer) Append(b ...byte) error {
 }
 
 // push pushes one byte onto the buffer.
-// NOTE: This is a hot code path.
 func (mw *Writer) push(b byte) error {
 	if mw.wloc == len(mw.buf) {
 		if err := mw.flush(); err != nil {

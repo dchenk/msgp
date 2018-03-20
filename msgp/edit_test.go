@@ -7,15 +7,21 @@ import (
 )
 
 func TestRemove(t *testing.T) {
+
 	var buf bytes.Buffer
 	w := NewWriter(&buf)
+
 	w.WriteMapHeader(3)
+
 	w.WriteString("first")
 	w.WriteFloat64(-3.1)
+
 	w.WriteString("second")
 	w.WriteString("DELETE ME!!!")
+
 	w.WriteString("third")
 	w.WriteBytes([]byte("blah"))
+
 	w.Flush()
 
 	raw := Remove("second", buf.Bytes())
@@ -36,6 +42,7 @@ func TestRemove(t *testing.T) {
 	if _, ok := m["second"]; ok {
 		t.Errorf("field %q (deleted field) still present", "second")
 	}
+
 }
 
 func TestLocate(t *testing.T) {

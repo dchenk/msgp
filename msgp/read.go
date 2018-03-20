@@ -11,7 +11,7 @@ import (
 
 var readerPool = sync.Pool{New: func() interface{} { return &Reader{} }} // Pool to re-use Reader instances.
 
-// Check if int and uint types are 32 bits.
+// smallint says if int and uint types are 32 bits.
 const smallint = (32 << (^uint(0) >> 63)) == 32
 
 // A Type is a MessagePack wire type, including this
