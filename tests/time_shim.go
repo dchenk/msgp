@@ -1,17 +1,11 @@
 package tests
 
-import (
-	"time"
-)
+import "time"
 
 //go:generate msgp
 
-// Issue 94: shims were not propagated recursively, which caused
-// shims that weren't at the top level to be silently ignored.
-//
-// The following line will generate an error after the code is
-// generated if the generated code doesn't have the right
-// identifier in it.
+// The following line will generate an error after the code is generated
+// if the generated code doesn't have the identifier timetostr in it.
 
 //go:generate ./time_shim_search.sh $GOFILE timetostr
 

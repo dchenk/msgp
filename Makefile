@@ -2,7 +2,7 @@
 # develop the msgp tool or library.
 # You can still install msgp with `go get` or `go install`.
 
-GGEN = ./tests/def_gen.go ./tests/def_gen_test.go
+GGEN = ./tests/*_gen.go ./tests/*_gen_test.go
 
 MGEN = ./msgp/defs_gen_test.go
 
@@ -18,10 +18,10 @@ $(BIN): */*.go
 install: $(BIN)
 
 $(GGEN): ./tests/def.go
-	go generate ./tests
+	cd ./tests && go generate
 
 $(MGEN): ./msgp/defs_test.go
-	go generate ./msgp
+	cd ./msgp && go generate
 
 fmt:
 	gofmt -s -w -e ./

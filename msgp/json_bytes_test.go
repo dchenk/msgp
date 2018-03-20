@@ -8,6 +8,7 @@ import (
 )
 
 func TestUnmarshalJSON(t *testing.T) {
+
 	var buf bytes.Buffer
 	enc := NewWriter(&buf)
 	enc.WriteMapHeader(5)
@@ -15,10 +16,10 @@ func TestUnmarshalJSON(t *testing.T) {
 	enc.WriteString("thing_1")
 	enc.WriteString("a string object")
 
-	enc.WriteString("a_map")
+	enc.WriteString("thing_2_map")
 	enc.WriteMapHeader(2)
 
-	// INNER
+	// Inside key thing_2_map:
 	enc.WriteString("cmplx")
 	enc.WriteComplex64(complex(1.0, 1.0))
 	enc.WriteString("int_b")
@@ -33,14 +34,16 @@ func TestUnmarshalJSON(t *testing.T) {
 	enc.WriteString("now")
 	enc.WriteTime(time.Now())
 
-	enc.Flush()
+	if err := enc.Flush(); err != nil {
+		t.Fatalf("could not flush encoder: %v", err)
+	}
 
 	var js bytes.Buffer
 	_, err := UnmarshalAsJSON(&js, buf.Bytes())
 	if err != nil {
-		t.Logf("%s", js.Bytes())
-		t.Fatal(err)
+		t.Fatalf("could not unmarshal: %v; got: %s", err, js.String())
 	}
+
 	mp := make(map[string]interface{})
 	err = json.Unmarshal(js.Bytes(), &mp)
 	if err != nil {
@@ -57,25 +60,23 @@ func TestUnmarshalJSON(t *testing.T) {
 		t.Errorf("expected %q; got %q", "a string object", so)
 	}
 
+	c, ok := mp["thing_2_map"]
+	if !ok {
+		t.Fatalf(`"thing_2_map" field does not exist; got %v`, mp)
+	}
+
+	if m, ok := c.(map[string]interface{}); ok {
+		if _, ok := m["cmplx"]; !ok {
+			t.Error(`"thing_2_map.cmplx" does not exist`)
+		}
+	} else {
+		t.Error(`can't type-assert "c" to map[string]interface{}`)
+	}
+
 	if _, ok := mp["now"]; !ok {
 		t.Error(`"now" field doesn't exist`)
 	}
 
-	c, ok := mp["a_map"]
-	if !ok {
-		t.Error(`"a_map" field doesn't exist`)
-	} else {
-		if m, ok := c.(map[string]interface{}); ok {
-			if _, ok := m["cmplx"]; !ok {
-				t.Error(`"a_map.cmplx" doesn't exist`)
-			}
-		} else {
-			t.Error(`can't type-assert "c" to map[string]interface{}`)
-		}
-
-	}
-
-	t.Logf("JSON: %s", js.Bytes())
 }
 
 func BenchmarkUnmarshalAsJSON(b *testing.B) {

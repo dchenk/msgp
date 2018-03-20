@@ -70,8 +70,8 @@ func TestIdentNames(t *testing.T) {
 				// Some generated methods will not have variables declared inside (such as EncodeMsg), so check
 				// if there even are any local variables in either method; if there are, the methods must be different.
 				if (len(val1) > 0 || len(val2) > 0) && reflect.DeepEqual(val1, val2) {
-					fmt.Println("val1:", val1)
-					fmt.Println("val2:", val2)
+					t.Log("val1:", val1)
+					t.Log("val2:", val2)
 					t.Fatalf("(indx %d): vars identical but expected vars to change for %s", indx, methodName)
 				}
 

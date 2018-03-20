@@ -12,8 +12,8 @@ func TestReadInt64_a(t *testing.T) {
 		dec *MixedInts_dec
 	}{
 		{
-			enc: &MixedInts_enc{-13, 57, 32425, 88},
-			dec: &MixedInts_dec{-13, 57, 32425, 88},
+			enc: &MixedInts_enc{-13, 57, 32425, math.MaxInt64},
+			dec: &MixedInts_dec{-13, 57, 32425, math.MaxInt64},
 		},
 		{
 			enc: &MixedInts_enc{324, 127, 2, math.MaxInt8},

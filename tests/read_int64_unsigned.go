@@ -4,10 +4,10 @@ package tests
 // be able to decode unsigned integers into Go's signed integers when the unsigned does not overflow.
 
 //go:generate msgp -tests=false -io=false
-//msgp:marshal ignore MixedInts1_dec Int16ForUint32_dec
-//msgp:unmarshal ignore MixedInts1_enc Uint32_enc
+//msgp:marshal ignore MixedInts_dec Uint16_dec
+//msgp:unmarshal ignore MixedInts_enc Int32ForUint16_enc
 
-// An encoded MixedInts1_enc should be decodable into a MixedInts1dec (if no integers overflow or
+// An encoded MixedInts_enc should be decodable into a MixedInts1dec (if no integers overflow or
 // are negative).
 type MixedInts_enc struct {
 	A int64

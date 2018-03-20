@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"math"
 	"reflect"
 	"testing"
 
@@ -73,4 +74,38 @@ func TestRuneMarshalUnmarshal(t *testing.T) {
 	if !reflect.DeepEqual(tt.RuneSlice, out.RuneSlice) {
 		t.Errorf("rune slice mismatch")
 	}
+}
+
+func TestFixed(t *testing.T) {
+
+	cases := []Fixed{
+		{-5, true},
+		{23.5698, true},
+		{math.Pi, true},
+		{-math.E, false},
+	}
+
+	for i, tc := range cases {
+
+		buf := new(bytes.Buffer)
+
+		if err := msgp.Encode(buf, tc); err != nil {
+			t.Fatalf("could not encode case %d; %v", i, err)
+		}
+
+		dec := new(Fixed)
+		if err := msgp.Decode(buf, dec); err != nil {
+			t.Fatalf("could not decode case %d; %v", i, err)
+		}
+
+		if dec.A != tc.A {
+			t.Errorf("(index %d) got wrong A %v; wanted %v", i, dec.A, tc.A)
+		}
+
+		if dec.B != tc.B {
+			t.Errorf("(index %d) got wrong B %v; wanted %v", i, dec.B, tc.B)
+		}
+
+	}
+
 }

@@ -33,11 +33,9 @@ func init() {
 	}
 }
 
-// UnmarshalAsJSON takes raw messagepack and writes
-// it as JSON to 'w'. If an error is returned, the
-// bytes not translated will also be returned. If
-// no errors are encountered, the length of the returned
-// slice will be zero.
+// UnmarshalAsJSON takes raw MessagePack data and writes it as JSON to w.
+// If an error is returned, the bytes not unmarshalled will also be returned.
+// If no errors are encountered, the length of the returned slice will be zero.
 func UnmarshalAsJSON(w io.Writer, msg []byte) ([]byte, error) {
 	var (
 		scratch []byte
