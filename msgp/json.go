@@ -46,11 +46,9 @@ type jsWriter interface {
 }
 
 // CopyToJSON reads MessagePack from src and copies it as JSON to dst until EOF.
-func CopyToJSON(dst io.Writer, src io.Reader) (n int64, err error) {
+func CopyToJSON(dst io.Writer, src io.Reader) (int64, error) {
 	r := NewReader(src)
-	n, err = r.WriteToJSON(dst)
-	readerPool.Put(r)
-	return
+	return r.WriteToJSON(dst)
 }
 
 // WriteToJSON translates MessagePack from r and writes it as JSON to w until the underlying

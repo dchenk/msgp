@@ -3,13 +3,10 @@ package msgp
 import (
 	"io"
 	"math"
-	"sync"
 	"time"
 
 	"github.com/philhofer/fwd"
 )
-
-var readerPool = sync.Pool{New: func() interface{} { return &Reader{} }} // Pool to re-use Reader instances.
 
 // smallint says if int and uint types are 32 bits.
 const smallint = (32 << (^uint(0) >> 63)) == 32
@@ -73,7 +70,7 @@ func (t Type) String() string {
 }
 
 // Unmarshaler is the interface implemented by objects that know how to unmarshal themselves from
-// MessagePack. UnmarshalMsg unmarshals the object from binary, returing any leftover bytes and
+// MessagePack. UnmarshalMsg unmarshals the object from binary, returning any leftover bytes and
 // any errors encountered.
 type Unmarshaler interface {
 	UnmarshalMsg([]byte) ([]byte, error)
@@ -87,20 +84,12 @@ type Decoder interface {
 // Decode decodes d from r.
 func Decode(r io.Reader, d Decoder) error {
 	rd := NewReader(r)
-	err := d.DecodeMsg(rd)
-	readerPool.Put(rd)
-	return err
+	return d.DecodeMsg(rd)
 }
 
 // NewReader returns a *Reader that reads from the provided reader. The reader will be buffered.
 func NewReader(r io.Reader) *Reader {
-	p := readerPool.Get().(*Reader)
-	if p.R == nil {
-		p.R = fwd.NewReader(r)
-	} else {
-		p.R.Reset(r)
-	}
-	return p
+	return &Reader{R: fwd.NewReader(r)}
 }
 
 // NewReaderSize returns a *Reader with a buffer of the given size. (This is vastly preferable
