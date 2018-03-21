@@ -4,19 +4,18 @@ import (
 	"math"
 )
 
-// Locate returns a []byte pointing to the field
-// in a messagepack map with the provided key. (The returned []byte
-// points to a sub-slice of 'raw'; Locate does no allocations.) If the
-// key doesn't exist in the map, a zero-length []byte will be returned.
+// Locate returns a []byte pointing to the field in a MessagePack map with the
+// provided key. (The returned []byte points to a sub-slice of 'raw'; Locate does
+// no allocations.) If the key doesn't exist in the map, a zero-length []byte
+// will be returned.
 func Locate(key string, raw []byte) []byte {
 	s, n := locate(raw, key)
 	return raw[s:n]
 }
 
-// Replace takes a key ("key") in a messagepack map ("raw")
-// and replaces its value with the one provided and returns
-// the new []byte. The returned []byte may point to the same
-// memory as "raw". Replace makes no effort to evaluate the validity
+// Replace takes a key ("key") in a MessagePack map ("raw") and replaces its value
+// with the one provided and returns the new []byte. The returned []byte may point
+// to the same memory as "raw". Replace makes no effort to evaluate the validity
 // of the contents of 'val'. It may use up to the full capacity of 'raw.'
 // Replace returns 'nil' if the field doesn't exist or if the object in 'raw'
 // is not a map.
@@ -39,8 +38,8 @@ func CopyReplace(key string, raw []byte, val []byte) []byte {
 	return replace(raw, start, end, val, false)
 }
 
-// Remove removes a key-value pair from 'raw'. It returns
-// 'raw' unchanged if the key didn't exist.
+// Remove removes a key-value pair from 'raw'. It returns 'raw' unchanged
+// if the key didn't exist.
 func Remove(key string, raw []byte) []byte {
 	start, end := locateKV(raw, key)
 	if start == end {
@@ -50,8 +49,7 @@ func Remove(key string, raw []byte) []byte {
 	return resizeMap(raw, -1)
 }
 
-// HasKey returns whether the map in 'raw' has
-// a field with key 'key'
+// HasKey returns whether the map in 'raw' has a field with the key.
 func HasKey(key string, raw []byte) bool {
 	sz, bts, err := ReadMapHeaderBytes(raw)
 	if err != nil {

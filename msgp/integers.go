@@ -1,6 +1,6 @@
 package msgp
 
-// Utilities for integer encoding (inline-able)
+// Utilities for integer encoding.
 
 func putMint64(b []byte, i int64) {
 	b[0] = mint64

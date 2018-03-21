@@ -129,29 +129,24 @@ func AppendInt32(b []byte, i int32) []byte { return AppendInt64(b, int64(i)) }
 // AppendUint64 appends a uint64 b.
 func AppendUint64(b []byte, u uint64) []byte {
 	switch {
-	case u <= (1<<7)-1:
+	case u <= 127:
 		return append(b, wfixint(uint8(u)))
-
 	case u <= math.MaxUint8:
 		o, n := ensure(b, 2)
 		putMuint8(o[n:], uint8(u))
 		return o
-
 	case u <= math.MaxUint16:
 		o, n := ensure(b, 3)
 		putMuint16(o[n:], uint16(u))
 		return o
-
 	case u <= math.MaxUint32:
 		o, n := ensure(b, 5)
 		putMuint32(o[n:], uint32(u))
 		return o
-
 	default:
 		o, n := ensure(b, 9)
 		putMuint64(o[n:], u)
 		return o
-
 	}
 }
 
@@ -224,32 +219,6 @@ func AppendString(b []byte, s string) []byte {
 		n += 5
 	}
 	return o[:n+copy(o[n:], s)]
-}
-
-// AppendStringFromBytes appends a []byte as a MessagePack string to b.
-func AppendStringFromBytes(b []byte, str []byte) []byte {
-	sz := len(str)
-	var n int
-	var o []byte
-	switch {
-	case sz <= 31:
-		o, n = ensure(b, 1+sz)
-		o[n] = wfixstr(uint8(sz))
-		n++
-	case sz <= math.MaxUint8:
-		o, n = ensure(b, 2+sz)
-		prefixu8(o[n:], mstr8, uint8(sz))
-		n += 2
-	case sz <= math.MaxUint16:
-		o, n = ensure(b, 3+sz)
-		prefixu16(o[n:], mstr16, uint16(sz))
-		n += 3
-	default:
-		o, n = ensure(b, 5+sz)
-		prefixu32(o[n:], mstr32, uint32(sz))
-		n += 5
-	}
-	return o[:n+copy(o[n:], str)]
 }
 
 // AppendComplex64 appends a complex64 to b as a MessagePack extension.
