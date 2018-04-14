@@ -40,10 +40,7 @@ func NextType(b []byte) Type {
 
 // IsNil returns true if len(b)>0 and the leading byte is a "nil" MessagePack byte (0xc0).
 func IsNil(b []byte) bool {
-	if len(b) != 0 && b[0] == mnil {
-		return true
-	}
-	return false
+	return len(b) > 0 && b[0] == mnil
 }
 
 // Raw is raw encoded MessagePack. It implements Marshaler, Unmarshaler, Encoder, Decoder, and Sizer.
