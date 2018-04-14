@@ -873,108 +873,75 @@ func ReadMapStrIntfBytes(b []byte, old map[string]interface{}) (map[string]inter
 
 }
 
-// ReadIntfBytes attempts to read
-// the next object out of 'b' as a raw interface{} and
-// return the remaining bytes.
-func ReadIntfBytes(b []byte) (i interface{}, o []byte, err error) {
+// ReadIntfBytes reads the next object out of b as a raw interface{} and returns any remaining bytes.
+func ReadIntfBytes(b []byte) (interface{}, []byte, error) {
+
 	if len(b) < 1 {
-		err = ErrShortBytes
-		return
+		return nil, b, ErrShortBytes
 	}
 
 	k := NextType(b)
 
 	switch k {
 	case MapType:
-		i, o, err = ReadMapStrIntfBytes(b, nil)
-		return
-
+		return ReadMapStrIntfBytes(b, nil)
 	case ArrayType:
-		var sz uint32
-		sz, o, err = ReadArrayHeaderBytes(b)
+		sz, o, err := ReadArrayHeaderBytes(b)
 		if err != nil {
-			return
+			return nil, o, err
 		}
-		j := make([]interface{}, int(sz))
-		i = j
-		for d := range j {
-			j[d], o, err = ReadIntfBytes(o)
+		i := make([]interface{}, int(sz))
+		for d := range i {
+			i[d], o, err = ReadIntfBytes(o)
 			if err != nil {
-				return
+				return i, o, err
 			}
 		}
-		return
-
+		return i, o, nil
 	case Float32Type:
-		i, o, err = ReadFloat32Bytes(b)
-		return
-
+		return ReadFloat32Bytes(b)
 	case Float64Type:
-		i, o, err = ReadFloat64Bytes(b)
-		return
-
+		return ReadFloat64Bytes(b)
 	case IntType:
-		i, o, err = ReadInt64Bytes(b)
-		return
-
+		return ReadInt64Bytes(b)
 	case UintType:
-		i, o, err = ReadUint64Bytes(b)
-		return
-
+		return ReadUint64Bytes(b)
 	case BoolType:
-		i, o, err = ReadBoolBytes(b)
-		return
-
+		return ReadBoolBytes(b)
 	case TimeType:
-		i, o, err = ReadTimeBytes(b)
-		return
-
+		return ReadTimeBytes(b)
 	case Complex64Type:
-		i, o, err = ReadComplex64Bytes(b)
-		return
-
+		return ReadComplex64Bytes(b)
 	case Complex128Type:
-		i, o, err = ReadComplex128Bytes(b)
-		return
-
+		return ReadComplex128Bytes(b)
 	case ExtensionType:
-		var t int8
-		t, err = peekExtension(b)
+		t, err := peekExtension(b)
 		if err != nil {
-			return
+			return nil, b, err
 		}
-		// use a user-defined extension,
-		// if it's been registered
+		// use a user-defined extension if it's been registered
 		f, ok := extensionReg[t]
 		if ok {
 			e := f()
-			o, err = ReadExtensionBytes(b, e)
-			i = e
-			return
+			o, err := ReadExtensionBytes(b, e)
+			return e, o, err
 		}
 		// last resort is a raw extension
 		e := RawExtension{}
 		e.Type = int8(t)
-		o, err = ReadExtensionBytes(b, &e)
-		i = &e
-		return
-
+		o, err := ReadExtensionBytes(b, &e)
+		return &e, o, err
 	case NilType:
-		o, err = ReadNilBytes(b)
-		return
-
+		o, err := ReadNilBytes(b)
+		return nil, o, err
 	case BinType:
-		i, o, err = ReadBytesBytes(b, nil)
-		return
-
+		return ReadBytesBytes(b, nil)
 	case StrType:
-		i, o, err = ReadStringBytes(b)
-		return
-
+		return ReadStringBytes(b)
 	default:
-		err = InvalidPrefixError(b[0])
-		return
+		return nil, b[1:], InvalidPrefixError(b[0])
 	}
+
 }
 
 // Skip skips the next object in 'b' and
