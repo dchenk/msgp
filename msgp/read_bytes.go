@@ -835,45 +835,42 @@ func ReadTimeBytes(b []byte) (t time.Time, o []byte, err error) {
 	return
 }
 
-// ReadMapStrIntfBytes reads a map[string]interface{}
-// out of 'b' and returns the map and remaining bytes.
-// If 'old' is non-nil, the values will be read into that map.
-func ReadMapStrIntfBytes(b []byte, old map[string]interface{}) (v map[string]interface{}, o []byte, err error) {
-	var sz uint32
-	o = b
-	sz, o, err = ReadMapHeaderBytes(o)
+// ReadMapStrIntfBytes reads a map[string]interface{} out of b and returns the map and any remaining bytes.
+// If map old is not nil, it will be cleared and used so that a map does not need to be created.
+func ReadMapStrIntfBytes(b []byte, old map[string]interface{}) (map[string]interface{}, []byte, error) {
 
+	sz, o, err := ReadMapHeaderBytes(b)
 	if err != nil {
-		return
+		return old, o, err
 	}
 
 	if old != nil {
 		for key := range old {
 			delete(old, key)
 		}
-		v = old
 	} else {
-		v = make(map[string]interface{}, int(sz))
+		old = make(map[string]interface{}, int(sz))
 	}
 
 	for z := uint32(0); z < sz; z++ {
 		if len(o) < 1 {
-			err = ErrShortBytes
-			return
+			return old, o, ErrShortBytes
 		}
 		var key []byte
 		key, o, err = ReadMapKeyZC(o)
 		if err != nil {
-			return
+			return old, o, err
 		}
 		var val interface{}
 		val, o, err = ReadIntfBytes(o)
 		if err != nil {
-			return
+			return old, o, err
 		}
-		v[string(key)] = val
+		old[string(key)] = val
 	}
-	return
+
+	return old, o, err
+
 }
 
 // ReadIntfBytes attempts to read
