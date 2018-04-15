@@ -21,20 +21,17 @@ func ensure(b []byte, sz int) ([]byte, int) {
 
 // AppendMapHeader appends a map header with the given size to b.
 func AppendMapHeader(b []byte, sz uint32) []byte {
-	switch {
-	case sz <= 15:
+	if sz <= 15 {
 		return append(b, wfixmap(uint8(sz)))
-
-	case sz <= math.MaxUint16:
+	}
+	if sz <= math.MaxUint16 {
 		o, n := ensure(b, 3)
 		prefixu16(o[n:], mmap16, uint16(sz))
 		return o
-
-	default:
-		o, n := ensure(b, 5)
-		prefixu32(o[n:], mmap32, sz)
-		return o
 	}
+	o, n := ensure(b, 5)
+	prefixu32(o[n:], mmap32, sz)
+	return o
 }
 
 // AppendArrayHeader appends an array header with the given size to b.

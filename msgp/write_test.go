@@ -27,9 +27,10 @@ func RandBytes(sz int) []byte {
 }
 
 func TestWriteMapHeader(t *testing.T) {
+
 	tests := []struct {
-		Sz       uint32
-		Outbytes []byte
+		Sz  uint32
+		Out []byte
 	}{
 		{0, []byte{mfixmap}},
 		{1, []byte{mfixmap | byte(1)}},
@@ -45,11 +46,11 @@ func TestWriteMapHeader(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	var err error
 	wr := NewWriter(&buf)
-	for _, test := range tests {
+
+	for i, test := range tests {
 		buf.Reset()
-		err = wr.WriteMapHeader(test.Sz)
+		err := wr.WriteMapHeader(test.Sz)
 		if err != nil {
 			t.Error(err)
 		}
@@ -57,10 +58,11 @@ func TestWriteMapHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !bytes.Equal(buf.Bytes(), test.Outbytes) {
-			t.Errorf("Expected bytes %x; got %x", test.Outbytes, buf.Bytes())
+		if !bytes.Equal(buf.Bytes(), test.Out) {
+			t.Errorf("(case %d) expected bytes %x; got %x", i, test.Out, buf.Bytes())
 		}
 	}
+
 }
 
 func BenchmarkWriteMapHeader(b *testing.B) {
@@ -77,9 +79,10 @@ func BenchmarkWriteMapHeader(b *testing.B) {
 }
 
 func TestWriteArrayHeader(t *testing.T) {
+
 	tests := []struct {
-		Sz       uint32
-		Outbytes []byte
+		Sz  uint32
+		Out []byte
 	}{
 		{0, []byte{mfixarray}},
 		{1, []byte{mfixarray | byte(1)}},
@@ -88,11 +91,11 @@ func TestWriteArrayHeader(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-	var err error
 	wr := NewWriter(&buf)
-	for _, test := range tests {
+
+	for i, test := range tests {
 		buf.Reset()
-		err = wr.WriteArrayHeader(test.Sz)
+		err := wr.WriteArrayHeader(test.Sz)
 		if err != nil {
 			t.Error(err)
 		}
@@ -100,20 +103,23 @@ func TestWriteArrayHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		if !bytes.Equal(buf.Bytes(), test.Outbytes) {
-			t.Errorf("Expected bytes %x; got %x", test.Outbytes, buf.Bytes())
+		if !bytes.Equal(buf.Bytes(), test.Out) {
+			t.Errorf("(case %d) expected bytes %x; got %x", i, test.Out, buf.Bytes())
 		}
 	}
+
 }
 
 func TestReadWriteStringHeader(t *testing.T) {
+
 	sizes := []uint32{0, 5, 8, 19, 150, tuint16, tuint32}
+
 	var buf bytes.Buffer
-	var err error
 	wr := NewWriter(&buf)
-	for _, sz := range sizes {
+
+	for i, sz := range sizes {
 		buf.Reset()
-		err = wr.WriteStringHeader(sz)
+		err := wr.WriteStringHeader(sz)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -121,25 +127,27 @@ func TestReadWriteStringHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var nsz uint32
-		nsz, err = NewReader(&buf).ReadStringHeader()
+		nsz, err := NewReader(&buf).ReadStringHeader()
 		if err != nil {
 			t.Fatal(err)
 		}
 		if nsz != sz {
-			t.Errorf("put in size %d but got out size %d", sz, nsz)
+			t.Errorf("(case %d) put in size %d but got out size %d", i, sz, nsz)
 		}
 	}
+
 }
 
 func TestReadWriteBytesHeader(t *testing.T) {
+
 	sizes := []uint32{0, 5, 8, 19, 150, tuint16, tuint32}
+
 	var buf bytes.Buffer
-	var err error
 	wr := NewWriter(&buf)
-	for _, sz := range sizes {
+
+	for i, sz := range sizes {
 		buf.Reset()
-		err = wr.WriteBytesHeader(sz)
+		err := wr.WriteBytesHeader(sz)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -147,15 +155,15 @@ func TestReadWriteBytesHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		var nsz uint32
-		nsz, err = NewReader(&buf).ReadBytesHeader()
+		nsz, err := NewReader(&buf).ReadBytesHeader()
 		if err != nil {
 			t.Fatal(err)
 		}
 		if nsz != sz {
-			t.Errorf("put in size %d but got out size %d", sz, nsz)
+			t.Errorf("(case %d) put in size %d but got out size %d", i, sz, nsz)
 		}
 	}
+
 }
 
 func BenchmarkWriteArrayHeader(b *testing.B) {
@@ -193,7 +201,7 @@ func TestWriteNil(t *testing.T) {
 func TestWriteFloat64(t *testing.T) {
 	var buf bytes.Buffer
 	wr := NewWriter(&buf)
-
+	rand.Seed(time.Now().Unix())
 	for i := 0; i < 10000; i++ {
 		buf.Reset()
 		flt := (rand.Float64() - 0.5) * math.MaxFloat64
@@ -279,7 +287,7 @@ func TestWriteInt64(t *testing.T) {
 		}
 
 		if buf.Len() > 9 {
-			t.Errorf("buffer length should be <= 9; it's %d", buf.Len())
+			t.Errorf("buffer length should be <= 9 but is %d", buf.Len())
 		}
 	}
 }

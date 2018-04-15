@@ -9,9 +9,8 @@ import (
 // It can decode itself from any of the native MessagePack number types.
 // The zero-value of Number is Int(0).
 type Number struct {
-	// Internally, this is just a tagged union.
-	// The raw bits of the number are stored the
-	// same way regardless.
+	// Internally, this is just a tagged union. The raw bits of
+	// the number are stored the same way regardless.
 	bits uint64
 	typ  Type
 }

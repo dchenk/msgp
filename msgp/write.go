@@ -408,7 +408,7 @@ func (mw *Writer) WriteBool(b bool) error {
 	return mw.push(mfalse)
 }
 
-// WriteString writes a messagepack string to the writer.
+// WriteString writes a MessagePack string to the writer.
 // (This is NOT an implementation of io.StringWriter)
 func (mw *Writer) WriteString(s string) error {
 	sz := uint32(len(s))
@@ -446,8 +446,7 @@ func (mw *Writer) WriteStringHeader(sz uint32) error {
 	}
 }
 
-// WriteStringFromBytes writes a 'str' object
-// from a []byte.
+// WriteStringFromBytes writes a 'str' object from a []byte.
 func (mw *Writer) WriteStringFromBytes(str []byte) error {
 	sz := uint32(len(str))
 	var err error
@@ -553,8 +552,8 @@ func (mw *Writer) WriteTime(t time.Time) error {
 	return nil
 }
 
-// WriteIntf writes the concrete type of 'v'.
-// WriteIntf will error if 'v' is not one of the following:
+// WriteIntf writes the concrete type of v.
+// WriteIntf will error if v is not one of the following:
 //  - A bool, float, string, []byte, int, uint, or complex
 //  - A map of supported types (with string keys)
 //  - An array or slice of supported types
@@ -637,47 +636,45 @@ func (mw *Writer) WriteIntf(v interface{}) error {
 	return &ErrUnsupportedType{val.Type()}
 }
 
-func (mw *Writer) writeMap(v reflect.Value) (err error) {
+func (mw *Writer) writeMap(v reflect.Value) error {
 	if v.Type().Key().Kind() != reflect.String {
 		return errors.New("msgp: map keys must be strings")
 	}
 	ks := v.MapKeys()
-	err = mw.WriteMapHeader(uint32(len(ks)))
+	err := mw.WriteMapHeader(uint32(len(ks)))
 	if err != nil {
-		return
+		return err
 	}
 	for _, key := range ks {
 		val := v.MapIndex(key)
 		err = mw.WriteString(key.String())
 		if err != nil {
-			return
+			return err
 		}
 		err = mw.WriteIntf(val.Interface())
 		if err != nil {
-			return
+			return err
 		}
 	}
-	return
+	return nil
 }
 
-func (mw *Writer) writeSlice(v reflect.Value) (err error) {
-	// is []byte
-	if v.Type().ConvertibleTo(btsType) {
+func (mw *Writer) writeSlice(v reflect.Value) error {
+	if v.Type().ConvertibleTo(btsType) { // is []byte
 		return mw.WriteBytes(v.Bytes())
 	}
-
 	sz := uint32(v.Len())
-	err = mw.WriteArrayHeader(sz)
+	err := mw.WriteArrayHeader(sz)
 	if err != nil {
-		return
+		return err
 	}
 	for i := uint32(0); i < sz; i++ {
 		err = mw.WriteIntf(v.Index(int(i)).Interface())
 		if err != nil {
-			return
+			return err
 		}
 	}
-	return
+	return nil
 }
 
 func (mw *Writer) writeStruct(v reflect.Value) error {
@@ -687,56 +684,9 @@ func (mw *Writer) writeStruct(v reflect.Value) error {
 	return fmt.Errorf("msgp: unsupported type: %s", v.Type())
 }
 
-func (mw *Writer) writeVal(v reflect.Value) error {
-
-	if !isSupported(v.Kind()) {
-		return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
-	}
-
-	// shortcut for nil values
-	if v.IsNil() {
-		return mw.WriteNil()
-	}
-
-	switch v.Kind() {
-	case reflect.Bool:
-		return mw.WriteBool(v.Bool())
-
-	case reflect.Float32, reflect.Float64:
-		return mw.WriteFloat64(v.Float())
-	case reflect.Complex64, reflect.Complex128:
-		return mw.WriteComplex128(v.Complex())
-	case reflect.Int, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int8:
-		return mw.WriteInt64(v.Int())
-	case reflect.Interface, reflect.Ptr:
-		if v.IsNil() {
-			mw.WriteNil()
-		}
-		return mw.writeVal(v.Elem())
-	case reflect.Map:
-		return mw.writeMap(v)
-	case reflect.Uint, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint8:
-		return mw.WriteUint64(v.Uint())
-	case reflect.String:
-		return mw.WriteString(v.String())
-	case reflect.Slice, reflect.Array:
-		return mw.writeSlice(v)
-	case reflect.Struct:
-		return mw.writeStruct(v)
-	}
-
-	return fmt.Errorf("msgp: msgp/enc: type %q not supported", v.Type())
-
-}
-
 // isSupported says if k is encodable.
 func isSupported(k reflect.Kind) bool {
-	switch k {
-	case reflect.Func, reflect.Chan, reflect.Invalid, reflect.UnsafePointer:
-		return false
-	default:
-		return true
-	}
+	return k != reflect.Func && k != reflect.Chan && k != reflect.Invalid && k != reflect.UnsafePointer
 }
 
 // GuessSize guesses the size of the underlying value of 'i'. If the underlying value is not

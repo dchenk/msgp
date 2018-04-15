@@ -18,8 +18,8 @@ func TestIssue116(t *testing.T) {
 	}
 
 	var buf bytes.Buffer
-
 	w := NewWriter(&buf)
+
 	w.WriteInt64(math.MinInt64)
 	w.Flush()
 	i, err = NewReader(&buf).ReadInt64()
