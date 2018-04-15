@@ -280,20 +280,15 @@ func ReadFloat64Bytes(b []byte) (f float64, o []byte, err error) {
 // Possible errors:
 // - ErrShortBytes (too few bytes)
 // - TypeError{} (not a float32)
-func ReadFloat32Bytes(b []byte) (f float32, o []byte, err error) {
+func ReadFloat32Bytes(b []byte) (float32, []byte, error) {
 	if len(b) < 5 {
-		err = ErrShortBytes
-		return
+		return 0, b, ErrShortBytes
 	}
-
 	if b[0] != mfloat32 {
-		err = TypeError{Method: Float32Type, Encoded: getType(b[0])}
-		return
+		return 0, b, TypeError{Method: Float32Type, Encoded: getType(b[0])}
 	}
-
-	f = math.Float32frombits(getMuint32(b))
-	o = b[5:]
-	return
+	f := math.Float32frombits(getMuint32(b))
+	return f, b[5:], nil
 }
 
 // ReadBoolBytes tries to read a float64 from b and return the value and the remaining bytes.
@@ -548,7 +543,7 @@ func ReadBytesBytes(b []byte, scratch []byte) (v []byte, o []byte, err error) {
 func readBytesBytes(b []byte, scratch []byte, zc bool) (v []byte, o []byte, err error) {
 	l := len(b)
 	if l < 1 {
-		return nil, nil, ErrShortBytes
+		return nil, b, ErrShortBytes
 	}
 
 	lead := b[0]
