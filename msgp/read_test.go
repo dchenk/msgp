@@ -18,9 +18,8 @@ func TestSanity(t *testing.T) {
 
 func TestReadIntf(t *testing.T) {
 
-	// NOTE: If you include cases with, say, int32s, the test
-	// will fail, b/c integers are always read out as int64, and
-	// unsigned integers as uint64.
+	// NOTE: If you include cases with, say, int32s, the test will fail because
+	// integers are always read out as int64 and unsigned integers as uint64.
 
 	var testCases = []interface{}{
 		float64(128.032),
@@ -28,6 +27,7 @@ func TestReadIntf(t *testing.T) {
 		int64(-40),
 		uint64(9082981),
 		time.Now(),
+		time.Unix(1523820536, 4),
 		"hello!",
 		[]byte("hello!"),
 		map[string]interface{}{
@@ -49,7 +49,7 @@ func TestReadIntf(t *testing.T) {
 
 		err := enc.WriteIntf(ts)
 		if err != nil {
-			t.Errorf("Test case %d: %s", i, err)
+			t.Errorf("(case %d) %s", i, err)
 			continue
 		}
 		err = enc.Flush()
@@ -58,7 +58,7 @@ func TestReadIntf(t *testing.T) {
 		}
 		v, err = dec.ReadIntf()
 		if err != nil {
-			t.Errorf("Test case: %d: %s", i, err)
+			t.Errorf("(case %d) %s", i, err)
 		}
 
 		// For time, use time.Equal instead of reflect.DeepEqual.
@@ -75,23 +75,16 @@ func TestReadIntf(t *testing.T) {
 }
 
 func TestReadMapHeader(t *testing.T) {
-	tests := []struct {
-		Sz uint32
-	}{
-		{0},
-		{1},
-		{tuint16},
-		{tuint32},
-	}
+
+	cases := []uint32{0, 1, tuint16, tuint32}
 
 	var buf bytes.Buffer
-	var sz uint32
-	var err error
 	wr := NewWriter(&buf)
 	rd := NewReader(&buf)
-	for i, test := range tests {
+
+	for i, tc := range cases {
 		buf.Reset()
-		err = wr.WriteMapHeader(test.Sz)
+		err := wr.WriteMapHeader(tc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -99,14 +92,15 @@ func TestReadMapHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sz, err = rd.ReadMapHeader()
+		sz, err := rd.ReadMapHeader()
 		if err != nil {
-			t.Errorf("Test case %d: got error %s", i, err)
+			t.Errorf("(case %d) got error %s", i, err)
 		}
-		if sz != test.Sz {
-			t.Errorf("Test case %d: wrote size %d; got size %d", i, test.Sz, sz)
+		if sz != tc {
+			t.Errorf("(case %d) wrote size %d; got size %d", i, tc, sz)
 		}
 	}
+
 }
 
 func BenchmarkReadMapHeader(b *testing.B) {
@@ -125,23 +119,16 @@ func BenchmarkReadMapHeader(b *testing.B) {
 }
 
 func TestReadArrayHeader(t *testing.T) {
-	tests := []struct {
-		Sz uint32
-	}{
-		{0},
-		{1},
-		{tuint16},
-		{tuint32},
-	}
+
+	cases := []uint32{0, 1, tuint16, tuint32}
 
 	var buf bytes.Buffer
-	var sz uint32
-	var err error
 	wr := NewWriter(&buf)
 	rd := NewReader(&buf)
-	for i, test := range tests {
+
+	for i, tc := range cases {
 		buf.Reset()
-		err = wr.WriteArrayHeader(test.Sz)
+		err := wr.WriteArrayHeader(tc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -149,14 +136,15 @@ func TestReadArrayHeader(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		sz, err = rd.ReadArrayHeader()
+		sz, err := rd.ReadArrayHeader()
 		if err != nil {
 			t.Errorf("Test case %d: got error %s", i, err)
 		}
-		if sz != test.Sz {
-			t.Errorf("Test case %d: wrote size %d; got size %d", i, test.Sz, sz)
+		if sz != tc {
+			t.Errorf("Test case %d: wrote size %d; got size %d", i, tc, sz)
 		}
 	}
+
 }
 
 func BenchmarkReadArrayHeader(b *testing.B) {

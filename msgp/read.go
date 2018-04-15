@@ -910,57 +910,50 @@ func (m *Reader) ReadStringHeader() (sz uint32, err error) {
 }
 
 // ReadString reads a UTF-8 string from the reader.
-func (m *Reader) ReadString() (s string, err error) {
-	var p []byte
-	var lead byte
-	var read int64
-	p, err = m.R.Peek(1)
+func (m *Reader) ReadString() (string, error) {
+
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return "", err
 	}
-	lead = p[0]
+	lead := p[0]
 
+	var read uint32
 	if isfixstr(lead) {
-		read = int64(rfixstr(lead))
-		m.R.Skip(1)
-		goto fill
+		read = uint32(rfixstr(lead))
+		_, err = m.R.Skip(1)
+		if err != nil {
+			return "", err
+		}
+	} else {
+		switch lead {
+		case mstr8:
+			p, err = m.R.Next(2)
+			if err != nil {
+				return "", err
+			}
+			read = uint32(p[1])
+		case mstr16:
+			p, err = m.R.Next(3)
+			if err != nil {
+				return "", err
+			}
+			read = uint32(big.Uint16(p[1:]))
+		case mstr32:
+			p, err = m.R.Next(5)
+			if err != nil {
+				return "", err
+			}
+			read = big.Uint32(p[1:])
+		default:
+			return "", badPrefix(StrType, lead)
+		}
 	}
 
-	switch lead {
-	case mstr8:
-		p, err = m.R.Next(2)
-		if err != nil {
-			return
-		}
-		read = int64(uint8(p[1]))
-	case mstr16:
-		p, err = m.R.Next(3)
-		if err != nil {
-			return
-		}
-		read = int64(big.Uint16(p[1:]))
-	case mstr32:
-		p, err = m.R.Next(5)
-		if err != nil {
-			return
-		}
-		read = int64(big.Uint32(p[1:]))
-	default:
-		err = badPrefix(StrType, lead)
-		return
-	}
-fill:
-	if read == 0 {
-		s, err = "", nil
-		return
-	}
 	out := make([]byte, read)
 	_, err = m.R.ReadFull(out)
-	if err != nil {
-		return
-	}
-	s = string(out)
-	return
+	return string(out), err
+
 }
 
 // ReadComplex64 reads a complex64 from the reader.
@@ -1006,12 +999,11 @@ func (m *Reader) ReadComplex128() (f complex128, err error) {
 }
 
 // ReadMapStrIntf reads a MessagePack map into a map[string]interface{}.
-// (You must pass a non-nil map into the function.)
-func (m *Reader) ReadMapStrIntf(mp map[string]interface{}) (err error) {
-	var sz uint32
-	sz, err = m.ReadMapHeader()
+// You must pass a non-nil map into the function.
+func (m *Reader) ReadMapStrIntf(mp map[string]interface{}) error {
+	sz, err := m.ReadMapHeader()
 	if err != nil {
-		return
+		return err
 	}
 	for key := range mp {
 		delete(mp, key)
@@ -1021,15 +1013,15 @@ func (m *Reader) ReadMapStrIntf(mp map[string]interface{}) (err error) {
 		var val interface{}
 		key, err = m.ReadString()
 		if err != nil {
-			return
+			return err
 		}
 		val, err = m.ReadIntf()
 		if err != nil {
-			return
+			return err
 		}
 		mp[key] = val
 	}
-	return
+	return nil
 }
 
 // ReadTime reads a time.Time object from the reader.
