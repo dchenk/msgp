@@ -957,45 +957,39 @@ func (m *Reader) ReadString() (string, error) {
 }
 
 // ReadComplex64 reads a complex64 from the reader.
-func (m *Reader) ReadComplex64() (f complex64, err error) {
-	var p []byte
-	p, err = m.R.Peek(10)
+func (m *Reader) ReadComplex64() (complex64, error) {
+	p, err := m.R.Peek(10)
 	if err != nil {
-		return
+		return 0, err
 	}
 	if p[0] != mfixext8 {
-		err = badPrefix(Complex64Type, p[0])
-		return
+		return 0, badPrefix(Complex64Type, p[0])
 	}
 	if int8(p[1]) != Complex64Extension {
-		err = errExt(int8(p[1]), Complex64Extension)
-		return
+		return 0, errExt(int8(p[1]), Complex64Extension)
 	}
-	f = complex(math.Float32frombits(big.Uint32(p[2:])),
+	f := complex(math.Float32frombits(big.Uint32(p[2:])),
 		math.Float32frombits(big.Uint32(p[6:])))
 	_, err = m.R.Skip(10)
-	return
+	return f, err
 }
 
 // ReadComplex128 reads a complex128 from the reader.
-func (m *Reader) ReadComplex128() (f complex128, err error) {
-	var p []byte
-	p, err = m.R.Peek(18)
+func (m *Reader) ReadComplex128() (complex128, error) {
+	p, err := m.R.Peek(18)
 	if err != nil {
-		return
+		return 0, err
 	}
 	if p[0] != mfixext16 {
-		err = badPrefix(Complex128Type, p[0])
-		return
+		return 0, badPrefix(Complex128Type, p[0])
 	}
 	if int8(p[1]) != Complex128Extension {
-		err = errExt(int8(p[1]), Complex128Extension)
-		return
+		return 0, errExt(int8(p[1]), Complex128Extension)
 	}
-	f = complex(math.Float64frombits(big.Uint64(p[2:])),
+	f := complex(math.Float64frombits(big.Uint64(p[2:])),
 		math.Float64frombits(big.Uint64(p[10:])))
 	_, err = m.R.Skip(18)
-	return
+	return f, err
 }
 
 // ReadMapStrIntf reads a MessagePack map into a map[string]interface{}.

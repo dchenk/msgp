@@ -51,7 +51,7 @@ func (e ExtensionTypeError) Error() string {
 func (e ExtensionTypeError) Resumable() bool { return true }
 
 func errExt(got int8, wanted int8) error {
-	return ExtensionTypeError{Got: got, Want: wanted}
+	return ExtensionTypeError{got, wanted}
 }
 
 // Extension is the interface implemented by types that want to define their own binary encoding.
@@ -103,7 +103,6 @@ func (r *RawExtension) UnmarshalBinary(b []byte) error {
 // WriteExtension writes an extension type to the writer.
 func (mw *Writer) WriteExtension(e Extension) error {
 	l := e.Len()
-	var err error
 	switch l {
 	case 0:
 		o, err := mw.require(3)
@@ -176,9 +175,8 @@ func (mw *Writer) WriteExtension(e Extension) error {
 			mw.buf[o+5] = byte(e.ExtensionType())
 		}
 	}
-	// we can only write directly to the
-	// buffer if we're sure that it
-	// fits the object
+	// We can only write directly to the buffer if we're sure that it
+	// fits the object.
 	if l <= mw.bufsize() {
 		o, err := mw.require(l)
 		if err != nil {
@@ -186,10 +184,9 @@ func (mw *Writer) WriteExtension(e Extension) error {
 		}
 		return e.MarshalBinaryTo(mw.buf[o:])
 	}
-	// here we create a new buffer
-	// just large enough for the body
-	// and save it as the write buffer
-	err = mw.flush()
+	// Here we create a new buffer just large enough for the body
+	// and save it as the write buffer.
+	err := mw.flush()
 	if err != nil {
 		return err
 	}
