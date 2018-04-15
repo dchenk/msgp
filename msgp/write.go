@@ -534,18 +534,12 @@ func (mw *Writer) WriteMapStrIntf(mp map[string]interface{}) (err error) {
 
 // WriteTime writes a time.Time object to the wire.
 //
-// Time is encoded as Unix time, which means that
-// location (time zone) data is removed from the object.
-// The encoded object itself is 12 bytes: 8 bytes for
-// a big-endian 64-bit integer denoting seconds
-// elapsed since "zero" Unix time, followed by 4 bytes
-// for a big-endian 32-bit signed integer denoting
-// the nanosecond offset of the time. This encoding
-// is intended to ease portability across languages.
-// (Note that this is *not* the standard time.Time
-// binary encoding, because its implementation relies
-// heavily on the internal representation used by the
-// time package.)
+// Time is encoded as Unix time, which means that location (time zone) data is removed from the object.
+// The encoded object itself is 12 bytes: 8 bytes for a big-endian 64-bit integer denoting seconds
+// elapsed since "zero" Unix time, followed by 4 bytes for a big-endian 32-bit signed integer denoting
+// the nanosecond offset of the time. This encoding is intended to ease portability across languages.
+// (Note that this is *not* the standard time.Time binary encoding because its implementation relies
+// heavily on the internal representation used by the time package.)
 func (mw *Writer) WriteTime(t time.Time) error {
 	t = t.UTC()
 	o, err := mw.require(15)

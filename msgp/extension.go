@@ -6,14 +6,9 @@ import (
 )
 
 const (
-	// Complex64Extension is the extension number used for complex64
-	Complex64Extension = 3
-
-	// Complex128Extension is the extension number used for complex128
+	Complex64Extension  = 3
 	Complex128Extension = 4
-
-	// TimeExtension is the extension number used for time.Time
-	TimeExtension = 5
+	TimeExtension       = 5 // This is not the built-in MessagePack timestamp extension.
 )
 
 // extensionReg contains registered extensions.
@@ -32,8 +27,7 @@ var extensionReg = make(map[int8]func() Extension)
 // RegisterExtension will panic if you call it multiple times with the same 'typ' argument
 // or if you use a reserved type (3, 4, or 5).
 func RegisterExtension(typ int8, f func() Extension) {
-	switch typ {
-	case Complex64Extension, Complex128Extension, TimeExtension:
+	if typ == Complex64Extension || typ == Complex128Extension || typ == TimeExtension {
 		panic(fmt.Sprint("msgp: forbidden extension type:", typ))
 	}
 	if _, ok := extensionReg[typ]; ok {
@@ -45,8 +39,7 @@ func RegisterExtension(typ int8, f func() Extension) {
 // ExtensionTypeError is an error type returned when there is a mis-match between an extension
 // type and the type encoded on the wire
 type ExtensionTypeError struct {
-	Got  int8
-	Want int8
+	Got, Want int8
 }
 
 // Error implements the error interface
@@ -242,111 +235,103 @@ func peekExtension(b []byte) (int8, error) {
 	if len(b) < int(size) {
 		return 0, ErrShortBytes
 	}
-	// for fixed extensions,
-	// the type information is in
-	// the second byte
+	// For fixed extensions, the type information is in
+	// the second byte.
 	if spec.extra == constsize {
 		return int8(b[1]), nil
 	}
-	// otherwise, it's in the last
-	// part of the prefix
+	// Otherwise, it's in the last part of the prefix.
 	return int8(b[size-1]), nil
 }
 
 // ReadExtension reads the next object from the reader as an extension. ReadExtension will fail if
-// the next object in the stream is not an extension, or if e.Type() is not the same as the wire type.
-func (m *Reader) ReadExtension(e Extension) (err error) {
+// the next object in the stream is not an extension or if e.Type() is not the same as the wire type.
+func (m *Reader) ReadExtension(e Extension) error {
 
 	p, err := m.R.Peek(2)
 	if err != nil {
-		return
+		return err
 	}
 	lead := p[0]
 	var read, off int
 	switch lead {
 	case mfixext1:
 		if int8(p[1]) != e.ExtensionType() {
-			err = errExt(int8(p[1]), e.ExtensionType())
-			return
+			return errExt(int8(p[1]), e.ExtensionType())
 		}
 		p, err = m.R.Peek(3)
 		if err != nil {
-			return
+			return err
 		}
 		err = e.UnmarshalBinary(p[2:])
 		if err == nil {
 			_, err = m.R.Skip(3)
 		}
-		return
+		return err
 
 	case mfixext2:
 		if int8(p[1]) != e.ExtensionType() {
-			err = errExt(int8(p[1]), e.ExtensionType())
-			return
+			return errExt(int8(p[1]), e.ExtensionType())
 		}
 		p, err = m.R.Peek(4)
 		if err != nil {
-			return
+			return err
 		}
 		err = e.UnmarshalBinary(p[2:])
 		if err == nil {
 			_, err = m.R.Skip(4)
 		}
-		return
+		return err
 
 	case mfixext4:
 		if int8(p[1]) != e.ExtensionType() {
-			err = errExt(int8(p[1]), e.ExtensionType())
-			return
+			return errExt(int8(p[1]), e.ExtensionType())
 		}
 		p, err = m.R.Peek(6)
 		if err != nil {
-			return
+			return err
 		}
 		err = e.UnmarshalBinary(p[2:])
 		if err == nil {
 			_, err = m.R.Skip(6)
 		}
-		return
+		return err
 
 	case mfixext8:
 		if int8(p[1]) != e.ExtensionType() {
-			err = errExt(int8(p[1]), e.ExtensionType())
-			return
+			return errExt(int8(p[1]), e.ExtensionType())
 		}
 		p, err = m.R.Peek(10)
 		if err != nil {
-			return
+			return err
 		}
 		err = e.UnmarshalBinary(p[2:])
 		if err == nil {
 			_, err = m.R.Skip(10)
 		}
-		return
+		return err
 
 	case mfixext16:
 		if int8(p[1]) != e.ExtensionType() {
-			err = errExt(int8(p[1]), e.ExtensionType())
-			return
+			return errExt(int8(p[1]), e.ExtensionType())
 		}
 		p, err = m.R.Peek(18)
 		if err != nil {
-			return
+			return err
 		}
 		err = e.UnmarshalBinary(p[2:])
 		if err == nil {
 			_, err = m.R.Skip(18)
 		}
-		return
+		return err
 
 	case mext8:
 		p, err = m.R.Peek(3)
 		if err != nil {
-			return
+			return err
 		}
 		if int8(p[2]) != e.ExtensionType() {
-			err = errExt(int8(p[2]), e.ExtensionType())
-			return
+			return errExt(int8(p[2]), e.ExtensionType())
 		}
 		read = int(uint8(p[1]))
 		off = 3
@@ -354,11 +339,10 @@ func (m *Reader) ReadExtension(e Extension) (err error) {
 	case mext16:
 		p, err = m.R.Peek(4)
 		if err != nil {
-			return
+			return err
 		}
 		if int8(p[3]) != e.ExtensionType() {
-			err = errExt(int8(p[3]), e.ExtensionType())
-			return
+			return errExt(int8(p[3]), e.ExtensionType())
 		}
 		read = int(big.Uint16(p[1:]))
 		off = 4
@@ -366,29 +350,28 @@ func (m *Reader) ReadExtension(e Extension) (err error) {
 	case mext32:
 		p, err = m.R.Peek(6)
 		if err != nil {
-			return
+			return err
 		}
 		if int8(p[5]) != e.ExtensionType() {
-			err = errExt(int8(p[5]), e.ExtensionType())
-			return
+			return errExt(int8(p[5]), e.ExtensionType())
 		}
 		read = int(big.Uint32(p[1:]))
 		off = 6
 
 	default:
-		err = badPrefix(ExtensionType, lead)
-		return
+		return badPrefix(ExtensionType, lead)
 	}
 
 	p, err = m.R.Peek(read + off)
 	if err != nil {
-		return
+		return err
 	}
 	err = e.UnmarshalBinary(p[off:])
 	if err == nil {
 		_, err = m.R.Skip(read + off)
 	}
-	return
+	return err
+
 }
 
 // AppendExtension appends a MessagePack extension to the provided slice
@@ -452,14 +435,13 @@ func AppendExtension(b []byte, e Extension) ([]byte, error) {
 	return o, e.MarshalBinaryTo(o[n:])
 }
 
-// ReadExtensionBytes reads an extension from 'b' into 'e'
-// and returns any remaining bytes.
+// ReadExtensionBytes reads an extension from b into e and returns any remaining bytes.
 // Possible errors:
 // - ErrShortBytes ('b' not long enough)
-// - ExtensionTypeErorr{} (wire type not the same as e.Type())
-// - TypeErorr{} (next object not an extension)
+// - ExtensionTypeError{} (wire type not the same as e.Type())
+// - TypeError{} (next object not an extension)
 // - InvalidPrefixError
-// - An umarshal error returned from e.UnmarshalBinary
+// - An unmarshal error returned from e.UnmarshalBinary
 func ReadExtensionBytes(b []byte, e Extension) ([]byte, error) {
 	l := len(b)
 	if l < 3 {
@@ -521,8 +503,7 @@ func ReadExtensionBytes(b []byte, e Extension) ([]byte, error) {
 		return b, errExt(typ, e.ExtensionType())
 	}
 
-	// the data of the extension starts
-	// at 'off' and is 'sz' bytes long
+	// The data of the extension starts at off and is sz bytes long.
 	if len(b[off:]) < sz {
 		return b, ErrShortBytes
 	}

@@ -749,7 +749,7 @@ func ReadStringBytes(b []byte) (string, []byte, error) {
 
 // ReadStringAsBytes reads a 'str' object into a slice of bytes. The data read is the first slice returned,
 // which may be written to the memory held by the scratch slice if it is large enough (scratch may be nil).
-// The second slice returned contains the remaining bytes in b. Possible errors are ErrShortBytes (b not 
+// The second slice returned contains the remaining bytes in b. Possible errors are ErrShortBytes (b not
 // long enough), TypeError{} (not 'str' type), and InvalidPrefixError (unknown type marker).
 func ReadStringAsBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
 	tmp, o, err := ReadStringZC(b)
@@ -809,30 +809,21 @@ func ReadComplex64Bytes(b []byte) (c complex64, o []byte, err error) {
 	return
 }
 
-// ReadTimeBytes reads a time.Time
-// extension object from 'b' and returns the
-// remaining bytes.
-// Possible errors:
-// - ErrShortBytes (not enough bytes in 'b')
-// - TypeError{} (object not a complex64)
-// - ExtensionTypeError{} (object an extension of the correct size, but not a time.Time)
-func ReadTimeBytes(b []byte) (t time.Time, o []byte, err error) {
+// ReadTimeBytes reads a time.Time extension object from slice b and returns any remaining bytes.
+// Possible errors include ErrShortBytes (not enough bytes in b), TypeError{} (object not a time),
+// and ExtensionTypeError{} (object an extension of the correct size, but not a time.Time).
+func ReadTimeBytes(b []byte) (time.Time, []byte, error) {
 	if len(b) < 15 {
-		err = ErrShortBytes
-		return
+		return time.Time{}, b, ErrShortBytes
 	}
 	if b[0] != mext8 || b[1] != 12 {
-		err = badPrefix(TimeType, b[0])
-		return
+		return time.Time{}, b, badPrefix(TimeType, b[0])
 	}
 	if int8(b[2]) != TimeExtension {
-		err = errExt(int8(b[2]), TimeExtension)
-		return
+		return time.Time{}, b, errExt(int8(b[2]), TimeExtension)
 	}
 	sec, nsec := getUnix(b[3:])
-	t = time.Unix(sec, int64(nsec)).Local()
-	o = b[15:]
-	return
+	return time.Unix(sec, int64(nsec)).Local(), b[15:], nil
 }
 
 // ReadMapStrIntfBytes reads a map[string]interface{} out of b and returns the map and any remaining bytes.
@@ -919,14 +910,14 @@ func ReadIntfBytes(b []byte) (interface{}, []byte, error) {
 		if err != nil {
 			return nil, b, err
 		}
-		// use a user-defined extension if it's been registered
+		// Use a user-defined extension if it's been registered.
 		f, ok := extensionReg[t]
 		if ok {
 			e := f()
 			o, err := ReadExtensionBytes(b, e)
 			return e, o, err
 		}
-		// last resort is a raw extension
+		// Last resort is a raw extension.
 		e := RawExtension{}
 		e.Type = int8(t)
 		o, err := ReadExtensionBytes(b, &e)

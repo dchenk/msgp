@@ -297,45 +297,38 @@ func (m *Reader) Skip() error {
 
 }
 
-// ReadMapHeader reads the next object as a map header and returns the size of the map and
-// the number of bytes written. It will return a TypeError{} if the next object is not a map.
-func (m *Reader) ReadMapHeader() (sz uint32, err error) {
-	var p []byte
-	var lead byte
-	p, err = m.R.Peek(1)
+// ReadMapHeader reads the next object as a map header and returns the size of the map.
+// A TypeError{} is returned if the next object is not a map.
+func (m *Reader) ReadMapHeader() (uint32, error) {
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return 0, err
 	}
-	lead = p[0]
+	lead := p[0]
 	if isfixmap(lead) {
-		sz = uint32(rfixmap(lead))
 		_, err = m.R.Skip(1)
-		return
+		return uint32(rfixmap(lead)), err
 	}
 	switch lead {
 	case mmap16:
 		p, err = m.R.Next(3)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = uint32(big.Uint16(p[1:]))
-		return
+		return uint32(big.Uint16(p[1:])), nil
 	case mmap32:
 		p, err = m.R.Next(5)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = big.Uint32(p[1:])
-		return
+		return big.Uint32(p[1:]), nil
 	default:
-		err = badPrefix(MapType, lead)
-		return
+		return 0, badPrefix(MapType, lead)
 	}
 }
 
-// ReadMapKey reads either a 'str' or 'bin' field from
-// the reader and returns the value as a []byte. It uses
-// scratch for storage if it is large enough.
+// ReadMapKey reads either a 'str' or 'bin' field from the reader and returns the value as a []byte.
+// It uses scratch for storage if it is large enough.
 func (m *Reader) ReadMapKey(scratch []byte) ([]byte, error) {
 	out, err := m.ReadStringAsBytes(scratch)
 	if err != nil {
@@ -396,46 +389,36 @@ fill:
 	return m.R.Next(read)
 }
 
-// ReadArrayHeader reads the next object as an
-// array header and returns the size of the array
-// and the number of bytes read.
-func (m *Reader) ReadArrayHeader() (sz uint32, err error) {
-	var lead byte
-	var p []byte
-	p, err = m.R.Peek(1)
+// ReadArrayHeader reads the next object as an array header and returns the size of the array.
+func (m *Reader) ReadArrayHeader() (uint32, error) {
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return 0, err
 	}
-	lead = p[0]
+	lead := p[0]
 	if isfixarray(lead) {
-		sz = uint32(rfixarray(lead))
 		_, err = m.R.Skip(1)
-		return
+		return uint32(rfixarray(lead)), err
 	}
 	switch lead {
 	case marray16:
 		p, err = m.R.Next(3)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = uint32(big.Uint16(p[1:]))
-		return
-
+		return uint32(big.Uint16(p[1:])), nil
 	case marray32:
 		p, err = m.R.Next(5)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = big.Uint32(p[1:])
-		return
-
+		return big.Uint32(p[1:]), nil
 	default:
-		err = badPrefix(ArrayType, lead)
-		return
+		return 0, badPrefix(ArrayType, lead)
 	}
 }
 
-// ReadNil reads a 'nil' MessagePack byte from the reader
+// ReadNil reads a 'nil' MessagePack byte from the reader.
 func (m *Reader) ReadNil() error {
 	p, err := m.R.Peek(1)
 	if err != nil {
@@ -450,17 +433,15 @@ func (m *Reader) ReadNil() error {
 
 // ReadFloat64 reads a float64 from the reader. (If the value on the wire is encoded as a float32,
 // it will be up-cast to a float64.)
-func (m *Reader) ReadFloat64() (f float64, err error) {
-	var p []byte
-	p, err = m.R.Peek(9)
+func (m *Reader) ReadFloat64() (float64, error) {
+	p, err := m.R.Peek(9)
 	if err != nil {
-		// we'll allow a coversion from float32 to float64,
-		// since we don't lose any precision
+		// We'll allow a conversion from float32 to float64 because don't lose precision.
 		if err == io.EOF && len(p) > 0 && p[0] == mfloat32 {
 			ef, err := m.ReadFloat32()
 			return float64(ef), err
 		}
-		return
+		return 0, err
 	}
 	if p[0] != mfloat64 {
 		// see above
@@ -468,47 +449,36 @@ func (m *Reader) ReadFloat64() (f float64, err error) {
 			ef, err := m.ReadFloat32()
 			return float64(ef), err
 		}
-		err = badPrefix(Float64Type, p[0])
-		return
+		return 0, badPrefix(Float64Type, p[0])
 	}
-	f = math.Float64frombits(getMuint64(p))
 	_, err = m.R.Skip(9)
-	return
+	return math.Float64frombits(getMuint64(p)), err
 }
 
-// ReadFloat32 reads a float32 from the reader
-func (m *Reader) ReadFloat32() (f float32, err error) {
-	var p []byte
-	p, err = m.R.Peek(5)
+// ReadFloat32 reads a float32 from the reader.
+func (m *Reader) ReadFloat32() (float32, error) {
+	p, err := m.R.Peek(5)
 	if err != nil {
-		return
+		return 0, err
 	}
 	if p[0] != mfloat32 {
-		err = badPrefix(Float32Type, p[0])
-		return
+		return 0, badPrefix(Float32Type, p[0])
 	}
-	f = math.Float32frombits(getMuint32(p))
 	_, err = m.R.Skip(5)
-	return
+	return math.Float32frombits(getMuint32(p)), err
 }
 
 // ReadBool reads a bool from the reader.
-func (m *Reader) ReadBool() (b bool, err error) {
-	var p []byte
-	p, err = m.R.Peek(1)
+func (m *Reader) ReadBool() (bool, error) {
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return false, err
 	}
-	switch p[0] {
-	case mtrue:
-		b = true
-	case mfalse:
-	default:
-		err = badPrefix(BoolType, p[0])
-		return
+	if p[0] != mtrue && p[0] != mfalse {
+		return false, badPrefix(BoolType, p[0])
 	}
 	_, err = m.R.Skip(1)
-	return
+	return p[0] == mtrue, err
 }
 
 // ReadInt64 reads an int64 from the reader. If an int64 is not available, this function tries to read
@@ -1064,24 +1034,21 @@ func (m *Reader) ReadMapStrIntf(mp map[string]interface{}) (err error) {
 
 // ReadTime reads a time.Time object from the reader.
 // The returned time's location will be set to time.Local.
-func (m *Reader) ReadTime() (t time.Time, err error) {
-	var p []byte
-	p, err = m.R.Peek(15)
+func (m *Reader) ReadTime() (time.Time, error) {
+	p, err := m.R.Peek(15)
 	if err != nil {
-		return
+		return time.Time{}, err
 	}
 	if p[0] != mext8 || p[1] != 12 {
-		err = badPrefix(TimeType, p[0])
-		return
+		return time.Time{}, badPrefix(TimeType, p[0])
 	}
 	if int8(p[2]) != TimeExtension {
-		err = errExt(int8(p[2]), TimeExtension)
-		return
+		return time.Time{}, errExt(int8(p[2]), TimeExtension)
 	}
 	sec, nsec := getUnix(p[3:])
-	t = time.Unix(sec, int64(nsec)).Local()
+	t := time.Unix(sec, int64(nsec)).Local()
 	_, err = m.R.Skip(15)
-	return
+	return t, err
 }
 
 // ReadIntf reads out the next object as a raw interface{}. Arrays are decoded as []interface{},
