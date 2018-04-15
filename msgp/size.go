@@ -1,8 +1,8 @@
 package msgp
 
-// The sizes here are the worst-case (biggest) encoded sizes for each type, including
-// the prefix with the type information. For variable-length types like slices and
-// strings, the total encoded size is the prefix size plus the length of the actual object.
+// The sizes here are the worst-case (biggest) encoded sizes for each type, including the
+// prefix with the type information. For variable-length types like slices and strings,
+// the total encoded size is the prefix size plus the length of the actual object.
 const (
 	Int64Size      = 9
 	IntSize        = Int64Size
