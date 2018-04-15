@@ -666,14 +666,13 @@ func ReadExactBytes(b []byte, into []byte) (o []byte, err error) {
 }
 
 // ReadStringZC reads a MessagePack string field without copying. The returned []byte points
-// to the same memory as the input slice.
-// Possible errors:
-// - ErrShortBytes (b not long enough)
-// - TypeError{} (object not 'str')
-func ReadStringZC(b []byte) (v []byte, o []byte, err error) {
+// to the same memory as the input slice. Possible errors include ErrShortBytes (b not long
+// enough) and TypeError{} (object not 'str').
+func ReadStringZC(b []byte) ([]byte, []byte, error) {
+
 	l := len(b)
 	if l < 1 {
-		return nil, nil, ErrShortBytes
+		return nil, b, ErrShortBytes
 	}
 
 	lead := b[0]
@@ -686,42 +685,36 @@ func ReadStringZC(b []byte) (v []byte, o []byte, err error) {
 		switch lead {
 		case mstr8:
 			if l < 2 {
-				err = ErrShortBytes
-				return
+				return nil, b, ErrShortBytes
 			}
 			read = int(b[1])
 			b = b[2:]
 
 		case mstr16:
 			if l < 3 {
-				err = ErrShortBytes
-				return
+				return nil, b, ErrShortBytes
 			}
 			read = int(big.Uint16(b[1:]))
 			b = b[3:]
 
 		case mstr32:
 			if l < 5 {
-				err = ErrShortBytes
-				return
+				return nil, b, ErrShortBytes
 			}
 			read = int(big.Uint32(b[1:]))
 			b = b[5:]
 
 		default:
-			err = TypeError{Method: StrType, Encoded: getType(lead)}
-			return
+			return nil, b, TypeError{Method: StrType, Encoded: getType(lead)}
 		}
 	}
 
 	if len(b) < read {
-		err = ErrShortBytes
-		return
+		return nil, b, ErrShortBytes
 	}
 
-	v = b[0:read]
-	o = b[read:]
-	return
+	return b[0:read], b[read:], nil
+
 }
 
 // ReadStringBytes reads a 'str' object from b and returns its value and the remaining bytes in b.
