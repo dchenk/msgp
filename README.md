@@ -1,7 +1,8 @@
 MessagePack Code Generator [![Build Status](https://travis-ci.org/dchenk/msgp.svg?branch=master)](https://travis-ci.org/dchenk/msgp)
 =======
 
-This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki) or at [msgpack.org](https://msgpack.org).
+This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki)
+or at [msgpack.org](https://msgpack.org).
 
 ### Why MessagePack and This Tool?
 
@@ -33,17 +34,18 @@ type Person struct {
     Address    string `msgp:"address"`
     Age        int    `msgp:"age"`
     Hidden     string `msgp:"-"` // this field is ignored
-    unexported bool             // this field is also ignored
+    unexported bool              // this field is also ignored
 }
 ```
 
-By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encoder`, `msgp.Decoder`, `msgp.Marshaler`,
-and `msgp.Unmarshaler`. Carefully-designed applications can use these methods to do marshalling/unmarshalling
-with zero heap allocations.
+(The struct field tags are optional.)
 
-While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's`json.Marshaler`
-and `json.Unmarshaler`, `msgp.Encoder` and `msgp.Decoder` are useful for stream serialization.
-(`*msgp.Writer` and `*msgp.Reader` are essentially protocol-aware versions of `*bufio.Writer` and `*bufio.Reader`.)
+By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encoder`, `msgp.Decoder`, `msgp.Marshaler`, and `msgp.Unmarshaler`.
+Carefully-designed applications can use these methods to do marshalling/unmarshalling with zero heap allocations.
+
+While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's`json.Marshaler` and `json.Unmarshaler`,
+`msgp.Encoder` and `msgp.Decoder` are useful for stream serialization. (`*msgp.Writer` and `*msgp.Reader` are essentially
+protocol-aware versions of `*bufio.Writer` and `*bufio.Reader`.)
 
 ### Features
 
@@ -68,7 +70,8 @@ type Struct struct {
     Nums   [Eight]float64    `msgp:"nums"`
 }
 ```
-As long as the declarations of `MyInt` and `Data` are in the same file as `Struct`, the parser will determine that the type information for `MyInt` and `Data` can be passed into the definition of `Struct` before its methods are generated.
+As long as the declarations of `MyInt` and `Data` are in the same file as `Struct`, the parser will determine that the type information
+for `MyInt` and `Data` can be passed into the definition of `Struct` before its methods are generated.
 
 #### Extensions
 
@@ -77,24 +80,31 @@ You can see [a worked example in the wiki.](https://github.com/dchenk/msgp/wiki/
 
 ### Status
 
-The code generator here and runtime library are both stable. Newer versions of the code may generate different code than older versions for performance reasons.
+The code generator here and runtime library are both stable. Newer versions of the code may generate different code than older versions
+for performance reasons.
 
 You can read more about how `msgp` maps MessagePack types onto Go types [in the wiki](http://github.com/dchenk/msgp/wiki).
 
 Here some of the known limitations/restrictions:
 
-- Identifiers from outside the processed source file are assumed to satisfy the generator's interfaces. If this isn't the case, your code will fail to compile.
+- Identifiers from outside the processed source file are assumed to satisfy the generator's interfaces. If this isn't the case, your code
+will fail to compile.
 - The `chan` and `func` fields and types are ignored as well as non-exported fields.
 - Encoding of `interface{}` is limited to built-ins or types that have explicit encoding methods.
-- _Maps must have `string` keys._ This is intentional (as it preserves JSON interoperability). Although non-string map keys are not forbidden by the MessagePack standard, many serializers impose this restriction. (It also means *any* well-formed `struct` can be de-serialized into a `map[string]interface{}`.) The only exception to this rule is that the deserializers will allow you to read map keys encoded as `bin` types, since some legacy encodings permitted this. (However, those values will still be cast to Go `string`s, and they will be converted to `str` types when re-encoded. It is the responsibility of the user to ensure that map keys are UTF-8 safe in this case.) The same rules hold true for JSON translation.
+- Maps must have `string` keys. This is intentional (as it preserves JSON interoperability). Although non-string map keys are not 
+forbidden by the MessagePack standard, many serializers impose this restriction. (It also means *any* well-formed `struct` can be 
+de-serialized into a `map[string]interface{}`.) The only exception to this rule is that the deserializers will allow you to read map keys
+encoded as `bin` types, since some legacy encodings permitted this. (However, those values will still be cast to Go `string`s, and they
+will be converted to `str` types when re-encoded. It is the responsibility of the user to ensure that map keys are UTF-8 safe in this case.)
+The same rules hold true for JSON translation.
 
-If the output compiles, then there's a pretty good chance things are fine. (Plus, we generate tests for you.) *Please, please, please* file an issue if you think the generator is writing broken code.
+If the output compiles, then there's a pretty good chance things are fine. (Plus, we generate tests for you.) Please file an issue if you
+think the generator is writing broken code.
 
 ### Performance
 
-If you like benchmarks, see [here](http://bravenewgeek.com/so-you-wanna-go-fast/) and [here](https://github.com/alecthomas/go_serialization_benchmarks).
-
-As one might expect, the generated methods that deal with `[]byte` are faster for small objects, but the `io.Reader/Writer` methods are generally more memory-efficient (and, at some point, faster) for large (> 2KB) objects.
+If you like benchmarks, see [here](https://github.com/dchenk/messagepack-benchmarks), [here](http://bravenewgeek.com/so-you-wanna-go-fast/),
+and [here](https://github.com/alecthomas/go_serialization_benchmarks).
 
 ## Credits
 
@@ -102,9 +112,10 @@ This repository is a fork of [github.com/tinylib/msgp](https://github.com/tinyli
 this repository takes the project in a new and better direction.
 
 Differences between this tool and tinylib/msgp:
-- Here we have regular expression matching for type names in directives.
-- Here we do not use package `unsafe` for conversions from byte slices to strings: `[]byte` is converted efficiently
-to `string` simply with the built-in `string()`.
-- This codebase is thoroughly refactored to be more Go-idiomatic, efficient, and inviting to contributors.
+- Here we have [regular expression matching](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator#matching-type-names) for type
+names in directives.
+- Here we do not use package `unsafe` for conversions from byte slices to strings: `[]byte` is converted quite efficiently to `string`
+simply with the built-in `string()`.
+- This codebase is thoroughly refactored to be more Go-idiomatic and efficient.
 
-Additionally, in this library we plan to add an `omitempty` feature, like what `encoding/json` has.
+You're welcome to contribute!
