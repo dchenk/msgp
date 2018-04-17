@@ -36,10 +36,11 @@ func TestNumber(t *testing.T) {
 	}
 
 	nums := []interface{}{
-		float64(3.14159),
+		float64(3.1415926),
+		float64(-9819.2342342),
 		int64(-29081),
 		uint64(90821983),
-		float32(3.141),
+		float32(3.14159),
 	}
 
 	var dat []byte
@@ -80,6 +81,9 @@ func TestNumber(t *testing.T) {
 			t.Fatal("marshal error:", err)
 		}
 		err = dout[i].EncodeMsg(wr)
+		if err != nil {
+			t.Fatal("encode error:", err)
+		}
 	}
 	wr.Flush()
 

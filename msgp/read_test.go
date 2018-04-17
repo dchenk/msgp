@@ -388,6 +388,7 @@ func BenchmarkReadInt64(b *testing.B) {
 }
 
 func TestReadUint64(t *testing.T) {
+
 	var buf bytes.Buffer
 	wr := NewWriter(&buf)
 	rd := NewReader(&buf)
@@ -406,10 +407,14 @@ func TestReadUint64(t *testing.T) {
 			t.Fatal(err)
 		}
 		out, err := rd.ReadUint64()
+		if err != nil {
+			t.Fatalf("trying to read: %v", err)
+		}
 		if out != num {
-			t.Errorf("Test case %d: put %d in and got %d out", i, num, out)
+			t.Errorf("(case %d) put %d in and got %d out", i, num, out)
 		}
 	}
+
 }
 
 func BenchmarkReadUint64(b *testing.B) {
@@ -735,6 +740,7 @@ func TestSkip(t *testing.T) {
 }
 
 func BenchmarkSkip(b *testing.B) {
+
 	var buf bytes.Buffer
 	en := NewWriter(&buf)
 	en.WriteMapHeader(6)
@@ -770,6 +776,7 @@ func BenchmarkSkip(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+
 }
 
 func TestCopyNext(t *testing.T) {
