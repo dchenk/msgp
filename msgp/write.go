@@ -23,7 +23,7 @@ var Nowhere io.Writer = nwhere{}
 
 type nwhere struct{}
 
-func (n nwhere) Write(p []byte) (int, error) { return len(p), nil }
+func (nwhere) Write(p []byte) (int, error) { return len(p), nil }
 
 // Marshaler is the interface implemented by types that know how to marshal themselves
 // as MessagePack. MarshalMsg appends the marshalled form of the object to the provided
@@ -65,7 +65,7 @@ func NewWriter(w io.Writer) *Writer {
 
 // NewWriterSize creates a Writer with a custom buffer size.
 func NewWriterSize(w io.Writer, sz int) *Writer {
-	// We must be able to require() 18 contiguous bytes,
+	// We must be able to require() 18 contiguous bytes for WriteComplex128,
 	// so that is the practical minimum buffer size.
 	if sz < 18 {
 		sz = 18
@@ -107,7 +107,8 @@ func Require(old []byte, extra int) []byte {
 	return n
 }
 
-func (mw *Writer) flush() error {
+// Flush flushes all of the buffered data to the underlying writer.
+func (mw *Writer) Flush() error {
 	if mw.wloc == 0 {
 		return nil
 	}
@@ -122,25 +123,17 @@ func (mw *Writer) flush() error {
 	return nil
 }
 
-// Flush flushes all of the buffered data to the underlying writer.
-func (mw *Writer) Flush() error { return mw.flush() }
-
-// Buffered returns the number bytes in the write buffer
+// Buffered returns the number bytes in the write buffer.
 func (mw *Writer) Buffered() int { return len(mw.buf) - mw.wloc }
-
-func (mw *Writer) avail() int { return len(mw.buf) - mw.wloc }
 
 func (mw *Writer) bufsize() int { return len(mw.buf) }
 
 // NOTE: require should only be called with a number that is guaranteed to be
 // less than len(mw.buf). Typically, it is called with a constant.
-//
-// NOTE: This is a hot code path.
 func (mw *Writer) require(n int) (int, error) {
-	c := len(mw.buf)
 	wl := mw.wloc
-	if c-wl < n {
-		if err := mw.flush(); err != nil {
+	if len(mw.buf)-wl < n {
+		if err := mw.Flush(); err != nil {
 			return 0, err
 		}
 		wl = mw.wloc
@@ -149,21 +142,22 @@ func (mw *Writer) require(n int) (int, error) {
 	return wl, nil
 }
 
-func (mw *Writer) Append(b ...byte) error {
-	if mw.avail() < len(b) {
-		err := mw.flush()
+// Append appends to the buffer any number of single bytes.
+func (mw *Writer) Append(bts ...byte) error {
+	if mw.Buffered() < len(bts) {
+		err := mw.Flush()
 		if err != nil {
 			return err
 		}
 	}
-	mw.wloc += copy(mw.buf[mw.wloc:], b)
+	mw.wloc += copy(mw.buf[mw.wloc:], bts)
 	return nil
 }
 
 // push pushes one byte onto the buffer.
 func (mw *Writer) push(b byte) error {
 	if mw.wloc == len(mw.buf) {
-		if err := mw.flush(); err != nil {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
@@ -175,7 +169,7 @@ func (mw *Writer) push(b byte) error {
 func (mw *Writer) prefix8(b byte, u uint8) error {
 	const need = 2
 	if len(mw.buf)-mw.wloc < need {
-		if err := mw.flush(); err != nil {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
@@ -187,7 +181,7 @@ func (mw *Writer) prefix8(b byte, u uint8) error {
 func (mw *Writer) prefix16(b byte, u uint16) error {
 	const need = 3
 	if len(mw.buf)-mw.wloc < need {
-		if err := mw.flush(); err != nil {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
@@ -199,7 +193,7 @@ func (mw *Writer) prefix16(b byte, u uint16) error {
 func (mw *Writer) prefix32(b byte, u uint32) error {
 	const need = 5
 	if len(mw.buf)-mw.wloc < need {
-		if err := mw.flush(); err != nil {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
@@ -211,7 +205,7 @@ func (mw *Writer) prefix32(b byte, u uint32) error {
 func (mw *Writer) prefix64(b byte, u uint64) error {
 	const need = 9
 	if len(mw.buf)-mw.wloc < need {
-		if err := mw.flush(); err != nil {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
@@ -223,8 +217,8 @@ func (mw *Writer) prefix64(b byte, u uint64) error {
 // Write implements io.Writer to write directly to the buffer.
 func (mw *Writer) Write(p []byte) (int, error) {
 	l := len(p)
-	if mw.avail() < l {
-		if err := mw.flush(); err != nil {
+	if mw.Buffered() < l {
+		if err := mw.Flush(); err != nil {
 			return 0, err
 		}
 		if l > len(mw.buf) {
@@ -238,8 +232,8 @@ func (mw *Writer) Write(p []byte) (int, error) {
 // writeString writes s to the buffer.
 func (mw *Writer) writeString(s string) error {
 	l := len(s)
-	if mw.avail() < l {
-		if err := mw.flush(); err != nil {
+	if mw.Buffered() < l {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 		if l > len(mw.buf) {

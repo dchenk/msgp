@@ -186,7 +186,7 @@ func (mw *Writer) WriteExtension(e Extension) error {
 	}
 	// Here we create a new buffer just large enough for the body
 	// and save it as the write buffer.
-	err := mw.flush()
+	err := mw.Flush()
 	if err != nil {
 		return err
 	}
