@@ -89,66 +89,68 @@ func rwNext(w jsWriter, src *Reader) (int, error) {
 	return defuns[t](w, src)
 }
 
-func rwMap(dst jsWriter, src *Reader) (n int, err error) {
-	var comma bool
-	var sz uint32
-	var field []byte
+func rwMap(dst jsWriter, src *Reader) (int, error) {
 
-	sz, err = src.ReadMapHeader()
+	sz, err := src.ReadMapHeader()
 	if err != nil {
-		return
+		return 0, err
 	}
 
 	if sz == 0 {
 		return dst.WriteString("{}")
 	}
 
+	var n int
+
 	err = dst.WriteByte('{')
 	if err != nil {
-		return
+		return n, err
 	}
 	n++
-	var nn int
+
+	var comma bool
 	for i := uint32(0); i < sz; i++ {
+
 		if comma {
 			err = dst.WriteByte(',')
 			if err != nil {
-				return
+				return n, err
 			}
 			n++
 		}
+		comma = true
 
-		field, err = src.ReadMapKeyPtr()
+		field, err := src.ReadMapKeyPtr()
 		if err != nil {
-			return
+			return n, err
 		}
-		nn, err = rwquoted(dst, field)
+		nn, err := rwQuoted(dst, field)
 		n += nn
 		if err != nil {
-			return
+			return n, err
 		}
 
 		err = dst.WriteByte(':')
 		if err != nil {
-			return
+			return n, err
 		}
 		n++
 		nn, err = rwNext(dst, src)
 		n += nn
 		if err != nil {
-			return
+			return n, err
 		}
-		if !comma {
-			comma = true
-		}
+
 	}
 
 	err = dst.WriteByte('}')
 	if err != nil {
-		return
+		return n, err
 	}
 	n++
-	return
+
+	return n, nil
+
 }
 
 func rwArray(dst jsWriter, src *Reader) (n int, err error) {
@@ -324,93 +326,88 @@ func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
 	return
 }
 
-func rwString(dst jsWriter, src *Reader) (n int, err error) {
-	var p []byte
-	p, err = src.R.Peek(1)
+func rwString(dst jsWriter, src *Reader) (int, error) {
+
+	p, err := src.R.Peek(1)
 	if err != nil {
-		return
+		return 0, err
 	}
+
 	lead := p[0]
 	var read int
 
 	if isfixstr(lead) {
 		read = int(rfixstr(lead))
 		src.R.Skip(1)
-		goto write
+	} else {
+		switch lead {
+		case mstr8:
+			p, err = src.R.Next(2)
+			if err != nil {
+				return 0, err
+			}
+			read = int(uint8(p[1]))
+		case mstr16:
+			p, err = src.R.Next(3)
+			if err != nil {
+				return 0, err
+			}
+			read = int(big.Uint16(p[1:]))
+		case mstr32:
+			p, err = src.R.Next(5)
+			if err != nil {
+				return 0, err
+			}
+			read = int(big.Uint32(p[1:]))
+		default:
+			return 0, badPrefix(StrType, lead)
+		}
 	}
 
-	switch lead {
-	case mstr8:
-		p, err = src.R.Next(2)
-		if err != nil {
-			return
-		}
-		read = int(uint8(p[1]))
-	case mstr16:
-		p, err = src.R.Next(3)
-		if err != nil {
-			return
-		}
-		read = int(big.Uint16(p[1:]))
-	case mstr32:
-		p, err = src.R.Next(5)
-		if err != nil {
-			return
-		}
-		read = int(big.Uint32(p[1:]))
-	default:
-		err = badPrefix(StrType, lead)
-		return
-	}
-write:
 	p, err = src.R.Next(read)
 	if err != nil {
-		return
+		return 0, err
 	}
-	n, err = rwquoted(dst, p)
-	return
+	return rwQuoted(dst, p)
+
 }
 
-func rwBytes(dst jsWriter, src *Reader) (n int, err error) {
-	var nn int
-	err = dst.WriteByte('"')
+func rwBytes(dst jsWriter, src *Reader) (int, error) {
+	var n int
+	err := dst.WriteByte('"')
 	if err != nil {
-		return
+		return n, err
 	}
 	n++
 	src.scratch, err = src.ReadBytes(src.scratch[:0])
 	if err != nil {
-		return
+		return n, err
 	}
 	enc := base64.NewEncoder(base64.StdEncoding, dst)
-	nn, err = enc.Write(src.scratch)
+	nn, err := enc.Write(src.scratch)
 	n += nn
 	if err != nil {
-		return
+		return n, err
 	}
 	err = enc.Close()
 	if err != nil {
-		return
+		return n, err
 	}
 	err = dst.WriteByte('"')
 	if err != nil {
-		return
+		return n, err
 	}
 	n++
-	return
+	return n, nil
 }
 
-// Below (c) The Go Authors, 2009-2014
-// Subject to the BSD-style license found at http://golang.org
-//
-// See: encoding/json/encode.go:(*encodeState).stringbytes()
-func rwquoted(dst jsWriter, s []byte) (n int, err error) {
-	var nn int
+func rwQuoted(dst jsWriter, s []byte) (n int, err error) {
 	err = dst.WriteByte('"')
 	if err != nil {
 		return
 	}
 	n++
+	var nn int
 	start := 0
 	for i := 0; i < len(s); {
 		if b := s[i]; b < utf8.RuneSelf {

@@ -148,7 +148,7 @@ func rwStringBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, erro
 	if err != nil {
 		return msg, scratch, err
 	}
-	_, err = rwquoted(w, str)
+	_, err = rwQuoted(w, str)
 	return msg, scratch, err
 }
 

@@ -151,8 +151,7 @@ func (m *Reader) CopyNext(w io.Writer) (int64, error) {
 
 	// For maps and slices, read elements
 	for x := uintptr(0); x < o; x++ {
-		var n2 int64
-		n2, err = m.CopyNext(w)
+		n2, err := m.CopyNext(w)
 		if err != nil {
 			return n, err
 		}
