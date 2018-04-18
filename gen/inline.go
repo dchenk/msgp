@@ -69,7 +69,7 @@ func (s *source) nextShim(ref *Elem, id string, be *BaseElem) {
 	}
 }
 
-// propInline identifies and inlines candidates
+// propInline identifies and in-lines candidates.
 func (s *source) propInline() {
 	for name, el := range s.identities {
 		pushState(name)

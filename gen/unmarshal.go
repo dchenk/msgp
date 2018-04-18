@@ -138,7 +138,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 	u.p.print(errCheck)
 
 	if b.Convert {
-		// close 'tmp' block
+		// Close 'tmp' block
 		if b.ShimMode == Cast {
 			u.p.printf("\n%s = %s(%s)\n", b.Varname(), b.FromBase(), refname)
 		} else {

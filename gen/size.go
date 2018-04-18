@@ -187,7 +187,7 @@ func (s *sizeGen) gBase(b *BaseElem) {
 		vname := randIdent()
 		s.p.printf("\nvar %s %s", vname, b.BaseType())
 
-		// ensure we don't get "unused variable" warnings from outer slice iterations
+		// Ensure we don't get "unused variable" warnings from outer slice iterations.
 		s.p.printf("\n_ = %s", b.Varname())
 
 		s.p.printf("\ns += %s", baseSizeExpr(b.Value, vname, b.BaseName()))
@@ -209,12 +209,7 @@ func lenExpr(sl *Slice) string {
 
 // fixedSize says if a given primitive is always the same (max) size on the wire.
 func fixedSize(p primitive) bool {
-	switch p {
-	case Intf, Ext, IDENT, Bytes, String:
-		return false
-	default:
-		return true
-	}
+	return p != Intf && p != Ext && p != IDENT && p != Bytes && p != String
 }
 
 // stripRef strips the address operator "&" from s.

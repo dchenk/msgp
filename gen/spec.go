@@ -60,13 +60,14 @@ func (m Method) String() string {
 	}
 }
 
+// The following methods indicate for each pass what interfaces types should implement.
 const (
-	Decode      Method                       = 1 << iota // msgp.Decoder
-	Encode                                               // msgp.Encoder
-	Marshal                                              // msgp.Marshaler
-	Unmarshal                                            // msgp.Unmarshaler
-	Size                                                 // msgp.Sizer
-	Test                                                 // generate tests
+	Decode      Method                       = 1 << iota // Decode using msgp.Decoder
+	Encode                                               // Encode using msgp.Encoder
+	Marshal                                              // Marshal using msgp.Marshaler
+	Unmarshal                                            // Unmarshal using msgp.Unmarshaler
+	Size                                                 // Size using msgp.Sizer
+	Test                                                 // Test functions should be generated
 	invalidmeth                                          // this isn't a method
 	encodetest  = Encode | Decode | Test                 // tests for Encoder and Decoder
 	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
@@ -359,12 +360,10 @@ func (p *printer) print(format string) {
 }
 
 func (p *printer) initPtr(pt *Ptr) {
-	if pt.Needsinit() {
+	if pt.NeedsInit() {
 		vn := pt.Varname()
-		p.printf("\nif %s == nil { %s = new(%s); }", vn, vn, pt.Value.TypeName())
+		p.printf("\nif %s == nil {\n%s = new(%s)\n}", vn, vn, pt.Value.TypeName())
 	}
 }
 
-func (p *printer) ok() bool {
-	return p.err == nil
-}
+func (p *printer) ok() bool { return p.err == nil }

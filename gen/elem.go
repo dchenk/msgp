@@ -390,7 +390,8 @@ func (s *Ptr) Copy() Elem {
 // Complexity returns a measure of the complexity of the element.
 func (s *Ptr) Complexity() int { return 1 + s.Value.Complexity() }
 
-func (s *Ptr) Needsinit() bool {
+// NeedsInit says if the pointer needs to be checked if it should be newly allocated for use.
+func (s *Ptr) NeedsInit() bool {
 	if be, ok := s.Value.(*BaseElem); ok && be.needsref {
 		return false
 	}
@@ -461,11 +462,14 @@ func writeStructFields(s []structField, structName string) {
 }
 
 // ShimMode determines whether the shim is a cast or a convert.
-type ShimMode int
+type ShimMode uint8
 
 const (
-	Cast ShimMode = iota
-	Convert
+	// Cast says to use the casting mode.
+	Cast ShimMode = 0
+
+	// Convert says to use the conversion mode.
+	Convert ShimMode = 1
 )
 
 // A BaseElem is an element that can be represented by a primitive MessagePack type.
@@ -519,23 +523,23 @@ func (s *BaseElem) TypeName() string {
 }
 
 // ToBase is used as tmp = {{ToBase}}({{Varname}}) if Convert==true.
-func (b *BaseElem) ToBase() string {
-	if b.ShimToBase != "" {
-		return b.ShimToBase
+func (s *BaseElem) ToBase() string {
+	if s.ShimToBase != "" {
+		return s.ShimToBase
 	}
-	return b.BaseType()
+	return s.BaseType()
 }
 
 // FromBase is used as {{Varname}} = {{FromBase}}(tmp) if Convert==true.
-func (b *BaseElem) FromBase() string {
-	if b.ShimFromBase != "" {
-		return b.ShimFromBase
+func (s *BaseElem) FromBase() string {
+	if s.ShimFromBase != "" {
+		return s.ShimFromBase
 	}
-	return b.TypeName()
+	return s.TypeName()
 }
 
-func (b *BaseElem) toBaseConvert() string {
-	return b.ToBase() + "(" + b.Varname() + ")"
+func (s *BaseElem) toBaseConvert() string {
+	return s.ToBase() + "(" + s.Varname() + ")"
 }
 
 // BaseName returns the string form of the
