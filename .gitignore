@@ -4,3 +4,4 @@ msgp/defs_gen_test.go
 msgp/cover.out
 *~
 *.coverprofile
+coverage.out
