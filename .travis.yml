@@ -1,14 +1,12 @@
 language: go
+
 go:
-- 1.9.x
-- 1.10.x
-- master
+  - 1.9.x
+  - 1.10.x
+  - master
+
 env:
-  matrix:
   - GIMME_ARCH=amd64
   - GIMME_ARCH=386
-  global:
-    secure: Er5kZgo8cj6vW/DLnbqFWC6hRevX7dmzsXJIDess4U+ZXhuvjANqCPGYTvUZq//L7QZEl/UwphhQW5FRcexoRHABDD5u6MRYiJRWXCfZo2h0WkcljU3yrb1GX1SQkjmoj3qtdXcz+y+3OFvLBd11Wiu9zNlU6fFJyTZmZUlXyxBh6apGK9NfbLb3wDVscjgNHqWq2u+4pwICWp7TlcqDz+Q1gDcgQzTov9WuG2KjLdH+D8JtN+H50V7zR0jxz+/tk4MMtG0hpDMOiNm3u7Of8I51pOj/GWAEFMPJ183SNaPKnsfyv5ygGJRAi9ZUtYZHg5jKmf0mclYK7wBS7h6+kC5vzmETYBXZpABt2Kd5pPpvrfz+W6QTEm7st03gx4THdnbw8NkwGajTqaHbxfV3HdF+lwDWZ2a1pGSUx+i5AlQj7UTNsoiD/4i8CzGLSnMR9X/Jmv20n5jLZUKF9kKIVwKZYGS7dGyhFBHr7P39KFIBHaLQq2oGbHK034qZyA7WRondA3crdJIGHSlWOisd39l02D5qgzF0zKIKAd8xDtkNHPFYWTiOwILHVwWYD6TSCO7DR9S5KZmo5ib5VV2nFPKcuaAIl+EspQYt95UQD/3DRWYk+5o8RQjFllArMBsliar7PGakmRVmiloS2EA0q1W1TDqPAFV+359j1S7baOQ=
-before_install:
-  - go get github.com/mattn/goveralls
+
 script: make travis

@@ -1,7 +1,4 @@
 tests/*_gen.go
 tests/*_gen_test.go
 msgp/defs_gen_test.go
-msgp/cover.out
-*~
-*.coverprofile
 coverage.out

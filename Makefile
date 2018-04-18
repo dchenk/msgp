@@ -50,4 +50,3 @@ travis:
 	go generate ./msgp
 	go generate ./tests
 	go test -v ./...
-	[ "${GIMME_ARCH}" == "amd64" ] && $(GOPATH)/bin/goveralls -service=travis-ci
