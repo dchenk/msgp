@@ -6,9 +6,15 @@ import (
 )
 
 const (
-	Complex64Extension  = 3
+	// Complex64Extension represents an extension for complex64 numbers.
+	Complex64Extension = 3
+
+	// Complex128Extension represents an extension for complex128 numbers.
 	Complex128Extension = 4
-	TimeExtension       = 5 // This is not the built-in MessagePack timestamp extension.
+
+	// TimeExtension represents an extension for timestamps. This is not the timestamp format
+	// defined in the MessagePack specification.
+	TimeExtension = 5
 )
 
 // extensionReg contains registered extensions.

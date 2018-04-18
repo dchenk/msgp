@@ -610,54 +610,46 @@ func ReadBytesZC(b []byte) (v []byte, o []byte, err error) {
 	return readBytesBytes(b, nil, true)
 }
 
-func ReadExactBytes(b []byte, into []byte) (o []byte, err error) {
+// ReadExactBytes reads into dst the bytes expected with the first object in b.
+func ReadExactBytes(b []byte, dst []byte) ([]byte, error) {
+
 	l := len(b)
 	if l < 1 {
-		err = ErrShortBytes
-		return
+		return b, ErrShortBytes
 	}
 
-	lead := b[0]
-	var read uint32
-	var skip int
-	switch lead {
+	var read uint32 // How many bytes are the actual data to read.
+	var skip int    // The length of the prefix indicating the length of data.
+
+	switch lead := b[0]; lead {
 	case mbin8:
 		if l < 2 {
-			err = ErrShortBytes
-			return
+			return b, ErrShortBytes
 		}
-
 		read = uint32(b[1])
 		skip = 2
-
 	case mbin16:
 		if l < 3 {
-			err = ErrShortBytes
-			return
+			return b, ErrShortBytes
 		}
 		read = uint32(big.Uint16(b[1:]))
 		skip = 3
-
 	case mbin32:
 		if l < 5 {
-			err = ErrShortBytes
-			return
+			return b, ErrShortBytes
 		}
-		read = uint32(big.Uint32(b[1:]))
+		read = big.Uint32(b[1:])
 		skip = 5
-
 	default:
-		err = badPrefix(BinType, lead)
-		return
+		return b, badPrefix(BinType, lead)
 	}
 
-	if read != uint32(len(into)) {
-		err = ArrayError{Wanted: uint32(len(into)), Got: read}
-		return
+	if read != uint32(len(dst)) {
+		return b, ArrayError{Wanted: uint32(len(dst)), Got: read}
 	}
 
-	o = b[skip+copy(into, b[skip:]):]
-	return
+	return b[skip+copy(dst, b[skip:]):], nil
+
 }
 
 // ReadStringZC reads a MessagePack string field without copying. The returned []byte points

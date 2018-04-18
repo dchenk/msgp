@@ -16,7 +16,7 @@ const smallint = (32 << (^uint(0) >> 63)) == 32
 type Type byte
 
 const (
-	InvalidType Type = iota // The zero value of Type is InvalidType.
+	InvalidType Type = iota // InvalidType is the zero value of Type (not used).
 
 	// MessagePack built-in types
 	StrType
@@ -31,7 +31,7 @@ const (
 	NilType
 	ExtensionType
 
-	// pseudo-types provided by extensions
+	// Types provided by extensions
 	Complex64Type
 	Complex128Type
 	TimeType
@@ -340,14 +340,10 @@ func (m *Reader) ReadMapKey(scratch []byte) ([]byte, error) {
 	return out, nil
 }
 
-// MapKeyPtr returns a []byte pointing to the contents
-// of a valid map key. The key cannot be empty, and it
-// must be shorter than the total buffer size of the
-// *Reader. Additionally, the returned slice is only
-// valid until the next *Reader method call. Users
-// should exercise extreme care when using this
-// method; writing into the returned slice may
-// corrupt future reads.
+// ReadMapKeyPtr returns a []byte pointing to the contents of a valid map key.
+// The key cannot be empty, and it must be shorter than the total buffer size of the *Reader.
+// The returned slice is only valid until the next *Reader method call. Be extremely careful
+// when using this method; writing into the returned slice may corrupt future reads.
 func (m *Reader) ReadMapKeyPtr() ([]byte, error) {
 	p, err := m.R.Peek(1)
 	if err != nil {

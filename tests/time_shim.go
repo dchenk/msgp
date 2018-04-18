@@ -10,6 +10,8 @@ import "time"
 //go:generate ./time_shim_search.sh $GOFILE timetostr
 
 //msgp:shim time.Time as:string using:timetostr/strtotime
+
+// T represents a type that we'll be shimming.
 type T struct {
 	T time.Time
 }
