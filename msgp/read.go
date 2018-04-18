@@ -16,9 +16,10 @@ const smallint = (32 << (^uint(0) >> 63)) == 32
 type Type byte
 
 const (
-	InvalidType Type = iota // InvalidType is the zero value of Type (not used).
+	// InvalidType is the zero value of Type (not used).
+	InvalidType Type = iota
 
-	// MessagePack built-in types
+	// StrType and the following types are built into the MessagePack standard.
 	StrType
 	BinType
 	MapType
@@ -31,7 +32,7 @@ const (
 	NilType
 	ExtensionType
 
-	// Types provided by extensions
+	// Complex64Type and the following types represent extensions.
 	Complex64Type
 	Complex128Type
 	TimeType
