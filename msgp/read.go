@@ -794,55 +794,58 @@ func (m *Reader) ReadExactBytes(into []byte) error {
 	return err
 }
 
-// ReadStringAsBytes reads a MessagePack 'str' (UTF-8) string and returns its
-// value as bytes. It may use 'scratch' for storage if it is non-nil.
-func (m *Reader) ReadStringAsBytes(scratch []byte) (b []byte, err error) {
-	var p []byte
-	var lead byte
-	p, err = m.R.Peek(1)
+// ReadStringAsBytes reads a MessagePack 'str' (UTF-8) string and returns its value as bytes.
+// The scratch slice will be used for storage if it is not nil and large enough.
+func (m *Reader) ReadStringAsBytes(scratch []byte) ([]byte, error) {
+
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return scratch, err
 	}
-	lead = p[0]
+
+	lead := p[0]
 	var read int64
 
 	if isfixstr(lead) {
 		read = int64(rfixstr(lead))
-		m.R.Skip(1)
-		goto fill
+		_, err = m.R.Skip(1)
+		if err != nil {
+			return scratch, err
+		}
+	} else {
+		switch lead {
+		case mstr8:
+			p, err = m.R.Next(2)
+			if err != nil {
+				return scratch, err
+			}
+			read = int64(uint8(p[1]))
+		case mstr16:
+			p, err = m.R.Next(3)
+			if err != nil {
+				return scratch, err
+			}
+			read = int64(big.Uint16(p[1:]))
+		case mstr32:
+			p, err = m.R.Next(5)
+			if err != nil {
+				return scratch, err
+			}
+			read = int64(big.Uint32(p[1:]))
+		default:
+			return scratch, badPrefix(StrType, lead)
+		}
 	}
 
-	switch lead {
-	case mstr8:
-		p, err = m.R.Next(2)
-		if err != nil {
-			return
-		}
-		read = int64(uint8(p[1]))
-	case mstr16:
-		p, err = m.R.Next(3)
-		if err != nil {
-			return
-		}
-		read = int64(big.Uint16(p[1:]))
-	case mstr32:
-		p, err = m.R.Next(5)
-		if err != nil {
-			return
-		}
-		read = int64(big.Uint32(p[1:]))
-	default:
-		err = badPrefix(StrType, lead)
-		return
-	}
-fill:
 	if int64(cap(scratch)) < read {
-		b = make([]byte, read)
+		scratch = make([]byte, read)
 	} else {
-		b = scratch[0:read]
+		scratch = scratch[0:read]
 	}
-	_, err = m.R.ReadFull(b)
-	return
+
+	_, err = m.R.ReadFull(scratch)
+	return scratch, err
+
 }
 
 // ReadStringHeader reads a string header off of the wire. The user is then responsible
