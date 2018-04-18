@@ -102,8 +102,8 @@ func getMuint8(b []byte) uint8 {
 	return uint8(b[1])
 }
 
-// putUnix puts into b the Unix time given in sec and nanoseconds. The slice b must be at least 12 bytes
-// long starting from index 0.
+// putUnix puts into b the Unix time given in seconds and nanoseconds. The slice b must be at least
+// 12 bytes long starting from index 0.
 func putUnix(b []byte, sec int64, nsec int32) {
 	b[0] = byte(sec >> 56)
 	b[1] = byte(sec >> 48)
@@ -153,7 +153,7 @@ func prefixu32(b []byte, pre byte, sz uint32) {
 	b[4] = byte(sz)
 }
 
-// prefixu64 writes a prefix at b[0] and a big-endian uint32 at b[1:9].
+// prefixu64 writes a prefix at b[0] and a big-endian uint64 at b[1:9].
 func prefixu64(b []byte, pre byte, sz uint64) {
 	b[0] = pre
 	b[1] = byte(sz >> 56)
