@@ -210,7 +210,7 @@ type Elem interface {
 	// Alias sets a type (alias) name.
 	Alias(typ string)
 
-	// Copy performs a deep copy of the object.
+	// Copy returns a deep copy of the object.
 	Copy() Elem
 
 	// Complexity returns a measure of the complexity of the element (greater
@@ -247,7 +247,7 @@ func (a *Array) SetVarname(s string) {
 	a.Els.SetVarname(a.Varname() + "[" + a.Index + "]")
 }
 
-// TypeName gives the object's type name.
+// TypeName returns the canonical Go type name.
 func (a *Array) TypeName() string {
 	if a.common.alias != "" {
 		return a.common.alias
@@ -256,14 +256,14 @@ func (a *Array) TypeName() string {
 	return a.common.alias
 }
 
-// Copy returns a deep copy of the array.
+// Copy returns a deep copy of the object.
 func (a *Array) Copy() Elem {
 	b := *a
 	b.Els = a.Els.Copy()
 	return &b
 }
 
-// Complexity gives the array's complexity.
+// Complexity returns a measure of the complexity of the element.
 func (a *Array) Complexity() int { return 1 + a.Els.Complexity() }
 
 // Map is a map[string]Elem.
@@ -284,6 +284,7 @@ func (m *Map) SetVarname(s string) {
 	m.Value.SetVarname(m.ValIndx)
 }
 
+// TypeName returns the canonical Go type name.
 func (m *Map) TypeName() string {
 	if m.common.alias != "" {
 		return m.common.alias
@@ -292,31 +293,36 @@ func (m *Map) TypeName() string {
 	return m.common.alias
 }
 
+// Copy returns a deep copy of the object.
 func (m *Map) Copy() Elem {
 	g := *m
 	g.Value = m.Value.Copy()
 	return &g
 }
 
+// Complexity returns a measure of the complexity of the element.
 func (m *Map) Complexity() int { return 2 + m.Value.Complexity() }
 
+// Slice represents a slice.
 type Slice struct {
 	common
 	Index string
 	Els   Elem // The type of each element
 }
 
-func (s *Slice) SetVarname(a string) {
-	s.common.SetVarname(a)
+// SetVarname sets the name of the slice and its index variable.
+func (s *Slice) SetVarname(n string) {
+	s.common.SetVarname(n)
 	s.Index = randIdent()
-	varName := s.Varname()
-	if varName[0] == '*' {
+	vn := s.Varname()
+	if vn[0] == '*' {
 		// Pointer-to-slice requires parenthesis for slicing.
-		varName = "(" + varName + ")"
+		vn = "(" + vn + ")"
 	}
-	s.Els.SetVarname(fmt.Sprintf("%s[%s]", varName, s.Index))
+	s.Els.SetVarname(vn + "[" + s.Index + "]")
 }
 
+// TypeName returns the canonical Go type name.
 func (s *Slice) TypeName() string {
 	if s.common.alias != "" {
 		return s.common.alias
@@ -325,47 +331,47 @@ func (s *Slice) TypeName() string {
 	return s.common.alias
 }
 
+// Copy returns a deep copy of the object.
 func (s *Slice) Copy() Elem {
 	z := *s
 	z.Els = s.Els.Copy()
 	return &z
 }
 
+// Complexity returns a measure of the complexity of the element.
 func (s *Slice) Complexity() int {
 	return 1 + s.Els.Complexity()
 }
 
+// Ptr represents a pointer.
 type Ptr struct {
 	common
 	Value Elem
 }
 
-func (s *Ptr) SetVarname(a string) {
-	s.common.SetVarname(a)
-
-	// struct fields are dereferenced
-	// automatically...
+// SetVarname sets the name of the pointer variable.
+func (s *Ptr) SetVarname(n string) {
+	s.common.SetVarname(n)
 	switch x := s.Value.(type) {
 	case *Struct:
-		// struct fields are automatically dereferenced
-		x.SetVarname(a)
+		// Struct fields are de-referenced automatically.
+		x.SetVarname(n)
 		return
-
 	case *BaseElem:
 		// identities have pointer receivers
 		if x.Value == IDENT {
-			x.SetVarname(a)
+			x.SetVarname(n)
 		} else {
-			x.SetVarname("*" + a)
+			x.SetVarname("*" + n)
 		}
 		return
-
 	default:
-		s.Value.SetVarname("*" + a)
+		s.Value.SetVarname("*" + n)
 		return
 	}
 }
 
+// TypeName returns the canonical Go type name.
 func (s *Ptr) TypeName() string {
 	if s.common.alias != "" {
 		return s.common.alias
@@ -374,12 +380,14 @@ func (s *Ptr) TypeName() string {
 	return s.common.alias
 }
 
+// Copy returns a deep copy of the object.
 func (s *Ptr) Copy() Elem {
 	v := *s
 	v.Value = s.Value.Copy()
 	return &v
 }
 
+// Complexity returns a measure of the complexity of the element.
 func (s *Ptr) Complexity() int { return 1 + s.Value.Complexity() }
 
 func (s *Ptr) Needsinit() bool {
@@ -395,6 +403,7 @@ type Struct struct {
 	AsTuple bool          // write as an array instead of a map
 }
 
+// TypeName returns the canonical Go type name.
 func (s *Struct) TypeName() string {
 	if s.common.alias != "" {
 		return s.common.alias
@@ -415,6 +424,7 @@ func (s *Struct) SetVarname(a string) {
 	writeStructFields(s.Fields, a)
 }
 
+// Copy returns a deep copy of the object.
 func (s *Struct) Copy() Elem {
 	g := *s
 	g.Fields = make([]structField, len(s.Fields))
@@ -425,6 +435,7 @@ func (s *Struct) Copy() Elem {
 	return &g
 }
 
+// Complexity returns a measure of the complexity of the element.
 func (s *Struct) Complexity() int {
 	c := 1
 	for i := range s.Fields {
@@ -493,7 +504,7 @@ func (s *BaseElem) SetVarname(a string) {
 	s.common.SetVarname(a)
 }
 
-// TypeName returns the syntactically correct Go type name for the base element.
+// TypeName returns the canonical Go type name for the base element.
 func (s *BaseElem) TypeName() string {
 	if s.common.alias != "" {
 		return s.common.alias
@@ -560,18 +571,19 @@ func (s *BaseElem) Needsref(b bool) {
 	s.needsref = b
 }
 
+// Copy returns a deep copy of the object.
 func (s *BaseElem) Copy() Elem {
 	g := *s
 	return &g
 }
 
+// Complexity returns a measure of the complexity of the element.
 func (s *BaseElem) Complexity() int {
 	if s.Convert && !s.mustinline {
 		return 2
 	}
-	// we need to return 1 if !printable(),
-	// in order to make sure that stuff gets
-	// inlined appropriately
+	// We need to return 1 if !printable() to make sure that
+	// stuff gets inlined appropriately.
 	return 1
 }
 
