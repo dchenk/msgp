@@ -1,6 +1,7 @@
 # MessagePack Code Generator and Library for Go
 [![Build Status](https://travis-ci.org/dchenk/msgp.svg?branch=master)](https://travis-ci.org/dchenk/msgp) 
-[![Go Report Card](https://goreportcard.com/badge/github.com/dchenk/msgp)](https://goreportcard.com/badge/github.com/dchenk/msgp)
+[![Go Report Card](https://goreportcard.com/badge/github.com/dchenk/msgp)](https://goreportcard.com/badge/github.com/dchenk/msgp) 
+[![Coverage Status](https://coveralls.io/repos/github/dchenk/msgp/badge.svg?branch=master)](https://coveralls.io/github/dchenk/msgp?branch=master)
 =======
 
 This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki)

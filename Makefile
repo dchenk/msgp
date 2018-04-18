@@ -50,3 +50,4 @@ travis:
 	go generate ./msgp
 	go generate ./tests
 	go test -v ./...
+	$(GOPATH)/bin/goveralls -service=travis-ci
