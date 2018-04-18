@@ -354,31 +354,30 @@ func (m *Reader) ReadMapKeyPtr() ([]byte, error) {
 	if isfixstr(lead) {
 		read = int(rfixstr(lead))
 		m.R.Skip(1)
-		goto fill
+	} else {
+		switch lead {
+		case mstr8, mbin8:
+			p, err = m.R.Next(2)
+			if err != nil {
+				return nil, err
+			}
+			read = int(p[1])
+		case mstr16, mbin16:
+			p, err = m.R.Next(3)
+			if err != nil {
+				return nil, err
+			}
+			read = int(big.Uint16(p[1:]))
+		case mstr32, mbin32:
+			p, err = m.R.Next(5)
+			if err != nil {
+				return nil, err
+			}
+			read = int(big.Uint32(p[1:]))
+		default:
+			return nil, badPrefix(StrType, lead)
+		}
 	}
-	switch lead {
-	case mstr8, mbin8:
-		p, err = m.R.Next(2)
-		if err != nil {
-			return nil, err
-		}
-		read = int(p[1])
-	case mstr16, mbin16:
-		p, err = m.R.Next(3)
-		if err != nil {
-			return nil, err
-		}
-		read = int(big.Uint16(p[1:]))
-	case mstr32, mbin32:
-		p, err = m.R.Next(5)
-		if err != nil {
-			return nil, err
-		}
-		read = int(big.Uint32(p[1:]))
-	default:
-		return nil, badPrefix(StrType, lead)
-	}
-fill:
 	if read == 0 {
 		return nil, ErrShortBytes
 	}
@@ -427,12 +426,11 @@ func (m *Reader) ReadNil() error {
 	return err
 }
 
-// ReadFloat64 reads a float64 from the reader. (If the value on the wire is encoded as a float32,
-// it will be up-cast to a float64.)
+// ReadFloat64 reads a float64 from the reader. If the value on the wire is encoded as a float32,
+// it will be converted to a float64 without losing precision.
 func (m *Reader) ReadFloat64() (float64, error) {
 	p, err := m.R.Peek(9)
 	if err != nil {
-		// We'll allow a conversion from float32 to float64 because don't lose precision.
 		if err == io.EOF && len(p) > 0 && p[0] == mfloat32 {
 			ef, err := m.ReadFloat32()
 			return float64(ef), err
@@ -440,7 +438,6 @@ func (m *Reader) ReadFloat64() (float64, error) {
 		return 0, err
 	}
 	if p[0] != mfloat64 {
-		// see above
 		if p[0] == mfloat32 {
 			ef, err := m.ReadFloat32()
 			return float64(ef), err
@@ -559,15 +556,12 @@ func (m *Reader) ReadInt64() (int64, error) {
 }
 
 // ReadInt32 reads an int32 from the reader
-func (m *Reader) ReadInt32() (i int32, err error) {
-	var in int64
-	in, err = m.ReadInt64()
+func (m *Reader) ReadInt32() (int32, error) {
+	in, err := m.ReadInt64()
 	if in > math.MaxInt32 || in < math.MinInt32 {
-		err = IntOverflow{Value: in, FailedBitsize: 32}
-		return
+		return 0, IntOverflow{Value: in, FailedBitsize: 32}
 	}
-	i = int32(in)
-	return
+	return int32(in), err
 }
 
 // ReadInt16 reads an int16 from the reader.
@@ -576,19 +570,16 @@ func (m *Reader) ReadInt16() (int16, error) {
 	if in > math.MaxInt16 || in < math.MinInt16 {
 		return 0, IntOverflow{Value: in, FailedBitsize: 16}
 	}
-	return int16(in), err // err may be nil
+	return int16(in), err
 }
 
 // ReadInt8 reads an int8 from the reader
-func (m *Reader) ReadInt8() (i int8, err error) {
-	var in int64
-	in, err = m.ReadInt64()
+func (m *Reader) ReadInt8() (int8, error) {
+	in, err := m.ReadInt64()
 	if in > math.MaxInt8 || in < math.MinInt8 {
-		err = IntOverflow{Value: in, FailedBitsize: 8}
-		return
+		return 0, IntOverflow{Value: in, FailedBitsize: 8}
 	}
-	i = int8(in)
-	return
+	return int8(in), err
 }
 
 // ReadInt reads an int from the reader
@@ -651,26 +642,20 @@ func (m *Reader) ReadUint64() (uint64, error) {
 
 // ReadUint32 reads a uint32 from the reader
 func (m *Reader) ReadUint32() (u uint32, err error) {
-	var in uint64
-	in, err = m.ReadUint64()
+	in, err := m.ReadUint64()
 	if in > math.MaxUint32 {
-		err = UintOverflow{Value: in, FailedBitsize: 32}
-		return
+		return 0, UintOverflow{Value: in, FailedBitsize: 32}
 	}
-	u = uint32(in)
-	return
+	return uint32(in), err
 }
 
 // ReadUint16 reads a uint16 from the reader
-func (m *Reader) ReadUint16() (u uint16, err error) {
-	var in uint64
-	in, err = m.ReadUint64()
+func (m *Reader) ReadUint16() (uint16, error) {
+	in, err := m.ReadUint64()
 	if in > math.MaxUint16 {
-		err = UintOverflow{Value: in, FailedBitsize: 16}
-		return
+		return 0, UintOverflow{Value: in, FailedBitsize: 16}
 	}
-	u = uint16(in)
-	return
+	return uint16(in), err
 }
 
 // ReadUint8 reads a uint8 from the reader.
@@ -742,35 +727,33 @@ func (m *Reader) ReadBytes(scratch []byte) ([]byte, error) {
 
 // ReadBytesHeader reads the size header of a MessagePack 'bin' object. The user is responsible
 // for dealing with the next 'sz' bytes from the reader in an application-specific way.
-func (m *Reader) ReadBytesHeader() (sz uint32, err error) {
-	var p []byte
-	p, err = m.R.Peek(1)
+func (m *Reader) ReadBytesHeader() (uint32, error) {
+	p, err := m.R.Peek(1)
 	if err != nil {
-		return
+		return 0, err
 	}
 	switch p[0] {
 	case mbin8:
 		p, err = m.R.Next(2)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = uint32(p[1])
+		return uint32(p[1]), nil
 	case mbin16:
 		p, err = m.R.Next(3)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = uint32(big.Uint16(p[1:]))
+		return uint32(big.Uint16(p[1:])), nil
 	case mbin32:
 		p, err = m.R.Next(5)
 		if err != nil {
-			return
+			return 0, err
 		}
-		sz = uint32(big.Uint32(p[1:]))
+		return big.Uint32(p[1:]), nil
 	default:
-		err = badPrefix(BinType, p[0])
+		return 0, badPrefix(BinType, p[0])
 	}
-	return
 }
 
 // ReadExactBytes reads a MessagePack 'bin'-encoded object off of the wire into the provided slice.
@@ -780,10 +763,9 @@ func (m *Reader) ReadExactBytes(into []byte) error {
 	if err != nil {
 		return err
 	}
-	lead := p[0]
 	var read int64 // bytes to read
 	var skip int   // prefix size to skip
-	switch lead {
+	switch lead := p[0]; lead {
 	case mbin8:
 		read = int64(p[1])
 		skip = 2
