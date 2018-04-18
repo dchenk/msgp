@@ -27,7 +27,7 @@ func (e *encodeGen) Apply(dirs []string) error {
 
 func (e *encodeGen) writeAndCheck(typ string, argfmt string, arg interface{}) {
 	e.p.printf("\nerr = en.Write%s(%s)", typ, fmt.Sprintf(argfmt, arg))
-	e.p.print(errcheck)
+	e.p.print(errCheck)
 }
 
 func (e *encodeGen) fuseHook() {
@@ -166,7 +166,7 @@ func (e *encodeGen) gArray(a *Array) {
 	// shortcut for [const]byte
 	if be, ok := a.Els.(*BaseElem); ok && (be.Value == Byte || be.Value == Uint8) {
 		e.p.printf("\nerr = en.WriteBytes((%s)[:])", a.Varname())
-		e.p.print(errcheck)
+		e.p.print(errCheck)
 		return
 	}
 
@@ -187,13 +187,13 @@ func (e *encodeGen) gBase(b *BaseElem) {
 			vname = randIdent()
 			e.p.printf("\nvar %s %s", vname, b.BaseType())
 			e.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
-			e.p.printf(errcheck)
+			e.p.printf(errCheck)
 		}
 	}
 
 	if b.Value == IDENT { // unknown identity
 		e.p.printf("\nerr = %s.EncodeMsg(en)", vname)
-		e.p.print(errcheck)
+		e.p.print(errCheck)
 	} else { // typical case
 		e.writeAndCheck(b.BaseName(), literalFmt, vname)
 	}

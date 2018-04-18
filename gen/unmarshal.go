@@ -58,7 +58,7 @@ func (u *unmarshalGen) assignAndCheck(name, base string) {
 		return
 	}
 	u.p.printf("\n%s, bts, err = msgp.Read%sBytes(bts)", name, base)
-	u.p.print(errcheck)
+	u.p.print(errCheck)
 }
 
 func (u *unmarshalGen) gStruct(s *Struct) {
@@ -95,7 +95,7 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 
 	u.p.printf("\nfor %s > 0 {", sz)
 	u.p.printf("\n%s--; field, bts, err = msgp.ReadMapKeyZC(bts)", sz)
-	u.p.print(errcheck)
+	u.p.print(errCheck)
 	u.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
 		if !u.p.ok() {
@@ -105,7 +105,7 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 		next(u, s.Fields[i].fieldElem)
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
-	u.p.print(errcheck)
+	u.p.print(errCheck)
 	u.p.print("\n}\n}") // close switch and for loop
 
 }
@@ -135,7 +135,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 	default:
 		u.p.printf("\n%s, bts, err = msgp.Read%sBytes(bts)", refname, b.BaseName())
 	}
-	u.p.print(errcheck)
+	u.p.print(errCheck)
 
 	if b.Convert {
 		// close 'tmp' block
@@ -143,7 +143,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 			u.p.printf("\n%s = %s(%s)\n", b.Varname(), b.FromBase(), refname)
 		} else {
 			u.p.printf("\n%s, err = %s(%s)", b.Varname(), b.FromBase(), refname)
-			u.p.print(errcheck)
+			u.p.print(errCheck)
 		}
 		u.p.printf("}")
 	}
@@ -159,7 +159,7 @@ func (u *unmarshalGen) gArray(a *Array) {
 	// see decode.go for symmetry
 	if be, ok := a.Els.(*BaseElem); ok && be.Value == Byte {
 		u.p.printf("\nbts, err = msgp.ReadExactBytes(bts, (%s)[:])", a.Varname())
-		u.p.print(errcheck)
+		u.p.print(errCheck)
 		return
 	}
 

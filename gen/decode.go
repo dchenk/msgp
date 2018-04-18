@@ -67,7 +67,7 @@ func (d *decodeGen) assignAndCheck(name string, typ string) {
 		return
 	}
 	d.p.printf("\n%s, err = dc.Read%s()", name, typ)
-	d.p.print(errcheck)
+	d.p.print(errCheck)
 }
 
 func (d *decodeGen) structAsTuple(s *Struct) {
@@ -102,7 +102,7 @@ func (d *decodeGen) structAsMap(s *Struct) {
 		}
 	}
 	d.p.print("\ndefault:\nerr = dc.Skip()")
-	d.p.print(errcheck)
+	d.p.print(errCheck)
 	d.p.closeBlock() // close switch
 	d.p.closeBlock() // close for loop
 }
@@ -142,7 +142,7 @@ func (d *decodeGen) gBase(b *BaseElem) {
 			d.p.printf("\n%s, err = dc.Read%s()", vname, bname)
 		}
 	}
-	d.p.print(errcheck)
+	d.p.print(errCheck)
 
 	// close block for 'tmp'
 	if b.Convert {
@@ -150,7 +150,7 @@ func (d *decodeGen) gBase(b *BaseElem) {
 			d.p.printf("\n%s = %s(%s)\n}", vname, b.FromBase(), tmp)
 		} else {
 			d.p.printf("\n%s, err = %s(%s)\n}", vname, b.FromBase(), tmp)
-			d.p.print(errcheck)
+			d.p.print(errCheck)
 		}
 	}
 
@@ -197,7 +197,7 @@ func (d *decodeGen) gArray(a *Array) {
 	// special case if we have [const]byte
 	if be, ok := a.Els.(*BaseElem); ok && (be.Value == Byte || be.Value == Uint8) {
 		d.p.printf("\nerr = dc.ReadExactBytes((%s)[:])", a.Varname())
-		d.p.print(errcheck)
+		d.p.print(errCheck)
 		return
 	}
 	sz := randIdent()
@@ -214,7 +214,7 @@ func (d *decodeGen) gPtr(p *Ptr) {
 	}
 	d.p.print("\nif dc.IsNil() {")
 	d.p.print("\nerr = dc.ReadNil()")
-	d.p.print(errcheck)
+	d.p.print(errCheck)
 	d.p.printf("\n%s = nil\n} else {", p.Varname())
 	d.p.initPtr(p)
 	next(d, p.Value)

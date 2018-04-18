@@ -397,6 +397,7 @@ func (s *Ptr) Needsinit() bool {
 	return true
 }
 
+// Struct represents a struct.
 type Struct struct {
 	common
 	Fields  []structField // field list
@@ -419,6 +420,7 @@ func (s *Struct) TypeName() string {
 	return s.common.alias
 }
 
+// SetVarname sets the name of the struct variable.
 func (s *Struct) SetVarname(a string) {
 	s.common.SetVarname(a)
 	writeStructFields(s.Fields, a)
@@ -458,6 +460,7 @@ func writeStructFields(s []structField, structName string) {
 	}
 }
 
+// ShimMode determines whether the shim is a cast or a convert.
 type ShimMode int
 
 const (
@@ -477,8 +480,10 @@ type BaseElem struct {
 	needsref     bool      // needs reference for shim
 }
 
+// Printable says if the element is printable.
 func (s *BaseElem) Printable() bool { return !s.mustinline }
 
+// Alias sets an alias.
 func (s *BaseElem) Alias(typ string) {
 	s.common.Alias(typ)
 	if s.Value != IDENT {
@@ -489,6 +494,7 @@ func (s *BaseElem) Alias(typ string) {
 	}
 }
 
+// SetVarname sets the name of the variable.
 func (s *BaseElem) SetVarname(a string) {
 	// Ext types whose parents are not pointers need
 	// to be explicitly referenced.
@@ -500,7 +506,6 @@ func (s *BaseElem) SetVarname(a string) {
 		s.common.SetVarname("&" + a)
 		return
 	}
-
 	s.common.SetVarname(a)
 }
 
@@ -513,7 +518,7 @@ func (s *BaseElem) TypeName() string {
 	return s.common.alias
 }
 
-// ToBase, used if Convert==true, is used as tmp = {{ToBase}}({{Varname}})
+// ToBase is used as tmp = {{ToBase}}({{Varname}}) if Convert==true.
 func (b *BaseElem) ToBase() string {
 	if b.ShimToBase != "" {
 		return b.ShimToBase
@@ -521,7 +526,7 @@ func (b *BaseElem) ToBase() string {
 	return b.BaseType()
 }
 
-// FromBase, used if Convert==true, is used as {{Varname}} = {{FromBase}}(tmp)
+// FromBase is used as {{Varname}} = {{FromBase}}(tmp) if Convert==true.
 func (b *BaseElem) FromBase() string {
 	if b.ShimFromBase != "" {
 		return b.ShimFromBase
@@ -544,13 +549,13 @@ func (s *BaseElem) BaseName() string {
 	return s.Value.String()
 }
 
+// BaseType gives the name of the base type.
 func (s *BaseElem) BaseType() string {
 	switch s.Value {
 	case IDENT:
 		return s.TypeName()
 
-	// exceptions to the naming/capitalization
-	// rule:
+	// Exceptions to the naming/capitalization rule:
 	case Intf:
 		return "interface{}"
 	case Bytes:
@@ -560,13 +565,14 @@ func (s *BaseElem) BaseType() string {
 	case Ext:
 		return "msgp.Extension"
 
-	// everything else is base.String() with
-	// the first letter as lowercase
+	// Everything else is base.String() with
+	// the first letter as lowercase.
 	default:
 		return strings.ToLower(s.BaseName())
 	}
 }
 
+// Needsref indicates whether the base type is a pointer.
 func (s *BaseElem) Needsref(b bool) {
 	s.needsref = b
 }
