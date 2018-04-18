@@ -51,7 +51,8 @@ func yieldComments(c []*ast.CommentGroup) (comments []string) {
 	return
 }
 
-//msgp:shim {Type} as:{Newtype} using:{toFunc/fromFunc} mode:{Mode}
+// applyShim applies a shim of the form:
+// msgp:shim {Type} as:{Newtype} using:{toFunc/fromFunc} mode:{Mode}
 func applyShim(text []string, s *source) error {
 	if len(text) < 4 || len(text) > 5 {
 		return fmt.Errorf("shim directive should have 3 or 4 arguments; found %d", len(text)-1)

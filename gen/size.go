@@ -167,11 +167,10 @@ func (s *sizeGen) gArray(a *Array) {
 
 func (s *sizeGen) gMap(m *Map) {
 	s.addConstant(builtinSize(mapHeader))
-	vn := m.Varname()
-	s.p.printf("\nif %s != nil {", vn)
-	s.p.printf("\nfor %s, %s := range %s {", m.Keyidx, m.Validx, vn)
-	s.p.printf("\n_ = %s", m.Validx) // we may not use the value
-	s.p.printf("\ns += msgp.StringPrefixSize + len(%s)", m.Keyidx)
+	s.p.printf("\nif %s != nil {", m.Varname())
+	s.p.printf("\nfor %s, %s := range %s {", m.KeyIndx, m.ValIndx, m.Varname())
+	s.p.printf("\n_ = %s", m.ValIndx) // we may not use the value
+	s.p.printf("\ns += msgp.StringPrefixSize + len(%s)", m.KeyIndx)
 	s.state = expr
 	next(s, m.Value)
 	s.p.closeBlock()

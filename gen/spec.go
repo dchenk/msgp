@@ -325,7 +325,7 @@ func (p *printer) resizeMap(size string, m *Map) {
 // assign key to value based on varnames
 func (p *printer) mapAssign(m *Map) {
 	if p.ok() {
-		p.printf("\n%s[%s] = %s", m.Varname(), m.Keyidx, m.Validx)
+		p.printf("\n%s[%s] = %s", m.Varname(), m.KeyIndx, m.ValIndx)
 	}
 }
 

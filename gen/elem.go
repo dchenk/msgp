@@ -92,6 +92,7 @@ const (
 	IDENT // IDENT means an unrecognized identifier
 )
 
+// String implements io.Stringer for primitive.
 func (k primitive) String() string {
 	switch k {
 	case String:
@@ -194,9 +195,9 @@ func isPrintable(e Elem) bool {
 // An Elem is a Go type capable of being serialized into MessagePack.
 // It is implemented by *Ptr, *Struct, *Array, *Slice, *Map, and *BaseElem.
 type Elem interface {
-	// SetVarname sets this node's variable name and recursively
-	// sets the names of all its children. In general, this
-	// should only be called on the parent of the tree.
+	// SetVarname sets the node's variable name and recursively the names of
+	// all its children. In general, this should only be called on the parent
+	// of the tree.
 	SetVarname(s string)
 
 	// Varname returns the variable name of the element.
@@ -228,6 +229,7 @@ func Ident(id string) *BaseElem {
 	return be
 }
 
+// Array represents an array.
 type Array struct {
 	common
 	Index string // index variable name
@@ -235,57 +237,51 @@ type Array struct {
 	Els   Elem   // child
 }
 
+// SetVarname sets the name of the array and its index variable.
 func (a *Array) SetVarname(s string) {
-
 	a.common.SetVarname(s)
-ridx:
-	a.Index = randIdent()
-
-	// Try to avoid using the same index as a parent slice.
-	if strings.Contains(a.Varname(), a.Index) {
-		goto ridx
+	// Avoid using the same index as a parent slice.
+	for a.Index == "" || strings.Contains(a.Varname(), a.Index) {
+		a.Index = randIdent()
 	}
-
-	a.Els.SetVarname(fmt.Sprintf("%s[%s]", a.Varname(), a.Index))
-
+	a.Els.SetVarname(a.Varname() + "[" + a.Index + "]")
 }
 
+// TypeName gives the object's type name.
 func (a *Array) TypeName() string {
 	if a.common.alias != "" {
 		return a.common.alias
 	}
-	a.common.Alias(fmt.Sprintf("[%s]%s", a.Size, a.Els.TypeName()))
+	a.common.Alias("[" + a.Size + "]" + a.Els.TypeName())
 	return a.common.alias
 }
 
+// Copy returns a deep copy of the array.
 func (a *Array) Copy() Elem {
 	b := *a
 	b.Els = a.Els.Copy()
 	return &b
 }
 
+// Complexity gives the array's complexity.
 func (a *Array) Complexity() int { return 1 + a.Els.Complexity() }
 
-// Map is a map[string]Elem
+// Map is a map[string]Elem.
 type Map struct {
 	common
-	Keyidx string // key variable name
-	Validx string // value variable name
-	Value  Elem   // value element
+	KeyIndx string // key variable name
+	ValIndx string // value variable name
+	Value   Elem   // value element
 }
 
+// SetVarname sets the names of the map and the index variables.
 func (m *Map) SetVarname(s string) {
 	m.common.SetVarname(s)
-ridx:
-	m.Keyidx = randIdent()
-	m.Validx = randIdent()
-
-	// just in case
-	if m.Keyidx == m.Validx {
-		goto ridx
+	m.KeyIndx = randIdent()
+	for m.ValIndx == "" || m.ValIndx == m.KeyIndx {
+		m.ValIndx = randIdent()
 	}
-
-	m.Value.SetVarname(m.Validx)
+	m.Value.SetVarname(m.ValIndx)
 }
 
 func (m *Map) TypeName() string {
