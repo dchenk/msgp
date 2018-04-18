@@ -208,11 +208,10 @@ func (m *Reader) IsNil() bool {
 }
 
 // getNextSize returns the size of the next object on the wire.
-// returns (obj size, obj elements, error) only maps and arrays have non-zero obj elements
-// for maps and arrays, obj size does not include elements
+// returns (obj size, obj elements, error) only maps and arrays have non-zero obj elements.
+// For maps and arrays, obj size does not include elements.
 //
-// use uintptr b/c it's guaranteed to be large enough
-// to hold whatever we can fit in memory.
+// Use uintptr because it will be large enough to hold whatever we can fit in memory.
 func getNextSize(r *fwd.Reader) (uintptr, uintptr, error) {
 	b, err := r.Peek(1)
 	if err != nil {
@@ -255,16 +254,11 @@ func getNextSize(r *fwd.Reader) (uintptr, uintptr, error) {
 // or map, the whole array or map will be skipped.
 func (m *Reader) Skip() error {
 
-	var (
-		v   uintptr // bytes
-		o   uintptr // objects
-		err error
-		p   []byte
-	)
+	var v, o uintptr // v is number of bytes, o is number of objects
 
-	// We can use the faster method if we have enough buffered data.
+	// It's faster to use buffered data if there is enough of it.
 	if m.R.Buffered() >= 5 {
-		p, err = m.R.Peek(5)
+		p, err := m.R.Peek(5)
 		if err != nil {
 			return err
 		}
@@ -273,6 +267,7 @@ func (m *Reader) Skip() error {
 			return err
 		}
 	} else {
+		var err error
 		v, o, err = getNextSize(m.R)
 		if err != nil {
 			return err
@@ -280,7 +275,7 @@ func (m *Reader) Skip() error {
 	}
 
 	// v is always non-zero if err == nil
-	_, err = m.R.Skip(int(v))
+	_, err := m.R.Skip(int(v))
 	if err != nil {
 		return err
 	}
@@ -292,6 +287,7 @@ func (m *Reader) Skip() error {
 			return err
 		}
 	}
+
 	return nil
 
 }
