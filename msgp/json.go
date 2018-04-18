@@ -159,11 +159,11 @@ func rwArray(dst jsWriter, src *Reader) (n int, err error) {
 		return
 	}
 	var sz uint32
-	var nn int
 	sz, err = src.ReadArrayHeader()
 	if err != nil {
 		return
 	}
+	var nn int
 	comma := false
 	for i := uint32(0); i < sz; i++ {
 		if comma {
@@ -259,7 +259,7 @@ func rwTime(dst jsWriter, src *Reader) (int, error) {
 func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
 	et, err := src.peekExtensionType()
 	if err != nil {
-		return 0, err
+		return n, err // must not be shadowed
 	}
 
 	// Registered extensions can override the JSON encoding.
