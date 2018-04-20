@@ -14,28 +14,6 @@ var (
 	hex  = []byte("0123456789abcdef")
 )
 
-var defuns [_maxtype]func(jsWriter, *Reader) (int, error)
-
-// Note: there is an initialization loop if this isn't set up during init()
-func init() {
-	defuns = [_maxtype]func(jsWriter, *Reader) (int, error){
-		StrType:        rwString,
-		BinType:        rwBytes,
-		MapType:        rwMap,
-		ArrayType:      rwArray,
-		Float64Type:    rwFloat64,
-		Float32Type:    rwFloat32,
-		BoolType:       rwBool,
-		IntType:        rwInt,
-		UintType:       rwUint,
-		NilType:        rwNil,
-		ExtensionType:  rwExtension,
-		Complex64Type:  rwExtension,
-		Complex128Type: rwExtension,
-		TimeType:       rwTime,
-	}
-}
-
 // jsWriter is the interface used to write JSON.
 type jsWriter interface {
 	io.Writer
@@ -50,8 +28,8 @@ func CopyToJSON(dst io.Writer, src io.Reader) (int64, error) {
 }
 
 // WriteToJSON translates MessagePack from r and writes it as JSON to w until the underlying
-// reader returns io.EOF. WriteToJSON returns the number of bytes written, and an error if
-// it stopped before EOF.
+// reader returns io.EOF. WriteToJSON returns the number of bytes written. An error is returned
+// only if reading stops before io.EOF.
 func (r *Reader) WriteToJSON(w io.Writer) (n int64, err error) {
 	var j jsWriter
 	var bf *bufio.Writer
@@ -61,8 +39,8 @@ func (r *Reader) WriteToJSON(w io.Writer) (n int64, err error) {
 		bf = bufio.NewWriter(w)
 		j = bf
 	}
+	var nn int
 	for err == nil {
-		var nn int
 		nn, err = rwNext(j, r)
 		n += int64(nn)
 	}
@@ -84,7 +62,38 @@ func rwNext(w jsWriter, src *Reader) (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	return defuns[t](w, src)
+	switch t {
+	case StrType:
+		return rwString(w, src)
+	case BinType:
+		return rwBytes(w, src)
+	case MapType:
+		return rwMap(w, src)
+	case ArrayType:
+		return rwArray(w, src)
+	case Float64Type:
+		return rwFloat64(w, src)
+	case Float32Type:
+		return rwFloat32(w, src)
+	case BoolType:
+		return rwBool(w, src)
+	case IntType:
+		return rwInt(w, src)
+	case UintType:
+		return rwUint(w, src)
+	case NilType:
+		return rwNil(w, src)
+	case ExtensionType:
+		return rwExtension(w, src)
+	case Complex64Type:
+		return rwExtension(w, src)
+	case Complex128Type:
+		return rwExtension(w, src)
+	case TimeType:
+		return rwTime(w, src)
+	default:
+		return 0, err
+	}
 }
 
 func rwMap(dst jsWriter, src *Reader) (int, error) {
@@ -254,23 +263,23 @@ func rwTime(dst jsWriter, src *Reader) (int, error) {
 	return dst.Write(bts)
 }
 
-func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
+func rwExtension(dst jsWriter, src *Reader) (int, error) {
+
 	et, err := src.peekExtensionType()
 	if err != nil {
-		return n, err // must not be shadowed
+		return 0, err // must not be shadowed
 	}
 
 	// Registered extensions can override the JSON encoding.
 	if j, ok := extensionReg[et]; ok {
-		var bts []byte
 		e := j()
 		err = src.ReadExtension(e)
 		if err != nil {
-			return
+			return 0, err
 		}
-		bts, err = json.Marshal(e)
+		bts, err := json.Marshal(e)
 		if err != nil {
-			return
+			return 0, err
 		}
 		return dst.Write(bts)
 	}
@@ -279,33 +288,34 @@ func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
 	e.Type = et
 	err = src.ReadExtension(&e)
 	if err != nil {
-		return
+		return 0, err
 	}
 
-	var nn int
+	var n int
 	err = dst.WriteByte('{')
 	if err != nil {
-		return
+		return n, err
 	}
 	n++
 
+	var nn int
 	nn, err = dst.WriteString(`"type:"`)
 	n += nn
 	if err != nil {
-		return
+		return n, err
 	}
 
 	src.scratch = strconv.AppendInt(src.scratch[0:0], int64(e.Type), 10)
 	nn, err = dst.Write(src.scratch)
 	n += nn
 	if err != nil {
-		return
+		return n, err
 	}
 
 	nn, err = dst.WriteString(`,"data":"`)
 	n += nn
 	if err != nil {
-		return
+		return n, err
 	}
 
 	enc := base64.NewEncoder(base64.StdEncoding, dst)
@@ -313,15 +323,16 @@ func rwExtension(dst jsWriter, src *Reader) (n int, err error) {
 	nn, err = enc.Write(e.Data)
 	n += nn
 	if err != nil {
-		return
+		return n, err
 	}
 	err = enc.Close()
 	if err != nil {
-		return
+		return n, err
 	}
 	nn, err = dst.WriteString(`"}`)
 	n += nn
-	return
+	return n, err
+
 }
 
 func rwString(dst jsWriter, src *Reader) (int, error) {

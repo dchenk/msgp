@@ -102,8 +102,7 @@ func NewReaderSize(r io.Reader, sz int) *Reader {
 // Reader wraps an io.Reader and provides methods to read MessagePack-encoded values from it.
 // Readers are buffered.
 type Reader struct {
-	// R is the buffered reader that the Reader uses to decode MessagePack.
-	// The Reader itself is stateless; all the buffering is done within R.
+	// R is the buffered reader used to decode MessagePack. Don't use it directly.
 	R       *fwd.Reader
 	scratch []byte
 }
