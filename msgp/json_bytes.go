@@ -9,45 +9,21 @@ import (
 	"time"
 )
 
-var unfuns [_maxtype]func(jsWriter, []byte, []byte) ([]byte, []byte, error)
-
-func init() {
-	unfuns = [_maxtype]func(jsWriter, []byte, []byte) ([]byte, []byte, error){
-		StrType:        rwStringBytes,
-		BinType:        rwBytesBytes,
-		MapType:        rwMapBytes,
-		ArrayType:      rwArrayBytes,
-		Float64Type:    rwFloat64Bytes,
-		Float32Type:    rwFloat32Bytes,
-		BoolType:       rwBoolBytes,
-		IntType:        rwIntBytes,
-		UintType:       rwUintBytes,
-		NilType:        rwNullBytes,
-		ExtensionType:  rwExtensionBytes,
-		Complex64Type:  rwExtensionBytes,
-		Complex128Type: rwExtensionBytes,
-		TimeType:       rwTimeBytes,
-	}
-}
-
 // UnmarshalAsJSON takes raw MessagePack data and writes it as JSON to w.
 // If an error is returned, the bytes not unmarshalled will also be returned.
 // If no errors are encountered, the length of the returned slice will be zero.
 func UnmarshalAsJSON(w io.Writer, msg []byte) ([]byte, error) {
-	var (
-		scratch []byte
-		cast    bool
-		dst     jsWriter
-		err     error
-	)
+	var cast bool
+	var dst jsWriter
 	if jsw, ok := w.(jsWriter); ok {
 		dst = jsw
 		cast = true
 	} else {
 		dst = bufio.NewWriterSize(w, 512)
 	}
-	for len(msg) > 0 && err == nil {
-		msg, scratch, err = writeNext(dst, msg, scratch)
+	var err error
+	for len(msg) > 0 {
+		msg, _, err = writeNext(dst, msg, nil)
 	}
 	if !cast && err == nil {
 		err = dst.(*bufio.Writer).Flush()
@@ -60,10 +36,8 @@ func writeNext(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
 		return msg, scratch, ErrShortBytes
 	}
 	t := getType(msg[0])
-	if t == InvalidType {
-		return msg, scratch, InvalidPrefixError(msg[0])
-	}
 	if t == ExtensionType {
+		// The TimeExtension type is encoded the time.MarshalJSON way.
 		et, err := peekExtension(msg)
 		if err != nil {
 			return nil, scratch, err
@@ -72,7 +46,36 @@ func writeNext(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
 			t = TimeType
 		}
 	}
-	return unfuns[t](w, msg, scratch)
+	switch t {
+	case InvalidType:
+		return msg, scratch, InvalidPrefixError(msg[0])
+	case StrType:
+		return rwStringBytes(w, msg, scratch)
+	case BinType:
+		return rwBytesBytes(w, msg, scratch)
+	case MapType:
+		return rwMapBytes(w, msg, scratch)
+	case ArrayType:
+		return rwArrayBytes(w, msg, scratch)
+	case Float64Type:
+		return rwFloat64Bytes(w, msg, scratch)
+	case Float32Type:
+		return rwFloat32Bytes(w, msg, scratch)
+	case BoolType:
+		return rwBoolBytes(w, msg, scratch)
+	case IntType:
+		return rwIntBytes(w, msg, scratch)
+	case UintType:
+		return rwUintBytes(w, msg, scratch)
+	case NilType:
+		return rwNullBytes(w, msg, scratch)
+	case ExtensionType, Complex64Type, Complex128Type:
+		return rwExtensionBytes(w, msg, scratch)
+	case TimeType:
+		return rwTimeBytes(w, msg, scratch)
+	default:
+		return nil, msg, InvalidPrefixError(msg[0])
+	}
 }
 
 func rwArrayBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
@@ -218,27 +221,6 @@ func rwUintBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error)
 	return msg, scratch, err
 }
 
-func rwFloatBytes(w jsWriter, msg []byte, f64 bool, scratch []byte) ([]byte, []byte, error) {
-	var f float64
-	var err error
-	var sz int
-	if f64 {
-		sz = 64
-		f, msg, err = ReadFloat64Bytes(msg)
-	} else {
-		sz = 32
-		var v float32
-		v, msg, err = ReadFloat32Bytes(msg)
-		f = float64(v)
-	}
-	if err != nil {
-		return msg, scratch, err
-	}
-	scratch = strconv.AppendFloat(scratch, f, 'f', -1, sz)
-	_, err = w.Write(scratch)
-	return msg, scratch, err
-}
-
 func rwFloat32Bytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
 	var f float32
 	var err error
@@ -278,31 +260,15 @@ func rwTimeBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error)
 	return msg, scratch, err
 }
 
+// rwExtensionBytes writes out an extension. Values of type time.Time should be handled by rwTimeBytes.
 func rwExtensionBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
-	var err error
-	var et int8
-	et, err = peekExtension(msg)
+
+	et, err := peekExtension(msg)
 	if err != nil {
 		return msg, scratch, err
 	}
 
-	// if it's time.Time
-	if et == TimeExtension {
-		var tm time.Time
-		tm, msg, err = ReadTimeBytes(msg)
-		if err != nil {
-			return msg, scratch, err
-		}
-		bts, err := tm.MarshalJSON()
-		if err != nil {
-			return msg, scratch, err
-		}
-		_, err = w.Write(bts)
-		return msg, scratch, err
-	}
-
-	// if the extension is registered,
-	// use its canonical JSON form
+	// If the extension is registered, use its canonical JSON form.
 	if f, ok := extensionReg[et]; ok {
 		e := f()
 		msg, err = ReadExtensionBytes(msg, e)
@@ -326,6 +292,7 @@ func rwExtensionBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, e
 	}
 	scratch, err = writeExt(w, r, scratch)
 	return msg, scratch, err
+
 }
 
 func writeExt(w jsWriter, r RawExtension, scratch []byte) ([]byte, error) {

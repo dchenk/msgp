@@ -18,8 +18,6 @@ var defuns [_maxtype]func(jsWriter, *Reader) (int, error)
 
 // Note: there is an initialization loop if this isn't set up during init()
 func init() {
-	// Since none of these functions are inline-able, there is not much of a
-	// penalty to the indirect call. However, this is best expressed as a jump-table.
 	defuns = [_maxtype]func(jsWriter, *Reader) (int, error){
 		StrType:        rwString,
 		BinType:        rwBytes,
@@ -63,8 +61,8 @@ func (r *Reader) WriteToJSON(w io.Writer) (n int64, err error) {
 		bf = bufio.NewWriter(w)
 		j = bf
 	}
-	var nn int
 	for err == nil {
+		var nn int
 		nn, err = rwNext(j, r)
 		n += int64(nn)
 	}
