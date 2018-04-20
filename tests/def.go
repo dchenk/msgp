@@ -236,7 +236,7 @@ type ArrayConstants struct {
 	ConstantOctal  [07]string
 }
 
-// Ensure non-msg struct tags work:
+// Ensure non-msgp struct tags work:
 
 type NonMsgStructTags struct {
 	A      []string `json:"fooJSON" msg:"fooMsgp"`
