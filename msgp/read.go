@@ -323,8 +323,8 @@ func (m *Reader) ReadMapHeader() (uint32, error) {
 	}
 }
 
-// ReadMapKey reads either a 'str' or 'bin' field from the reader and returns the value as a []byte.
-// It uses scratch for storage if it is large enough.
+// ReadMapKey reads a 'str' or 'bin' object (a key to a map element) from the reader and returns the
+// value as a []byte. It uses scratch for storage if it is large enough.
 func (m *Reader) ReadMapKey(scratch []byte) ([]byte, error) {
 	out, err := m.ReadStringAsBytes(scratch)
 	if err != nil {
@@ -684,7 +684,7 @@ func (m *Reader) ReadByte() (byte, error) {
 }
 
 // ReadBytes reads a MessagePack 'bin' object from the reader and returns its value.
-// It may use the scratch slice for storage if it is non-nil.
+// The scratch slice will be used for storage if it is not nil and large enough.
 func (m *Reader) ReadBytes(scratch []byte) ([]byte, error) {
 	p, err := m.R.Peek(2)
 	if err != nil {

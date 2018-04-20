@@ -173,19 +173,16 @@ func ReadMapHeaderBytes(b []byte) (sz uint32, o []byte, err error) {
 	}
 }
 
-// ReadMapKeyZC attempts to read a map key from b and returns the key bytes and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a str or bin)
+// ReadMapKeyZC reads a 'str' or 'bin' object (a key to a map element) from b and returns the value and
+// any remaining bytes. Possible errors are ErrShortBytes and TypeError{}.
 func ReadMapKeyZC(b []byte) ([]byte, []byte, error) {
 	o, b, err := ReadStringZC(b)
 	if err != nil {
 		if tperr, ok := err.(TypeError); ok && tperr.Encoded == BinType {
 			return ReadBytesZC(b)
 		}
-		return nil, b, err
 	}
-	return o, b, nil
+	return o, b, err
 }
 
 // ReadArrayHeaderBytes attempts to read the array header size off of b and return the size
@@ -533,9 +530,7 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 }
 
 // ReadBytesBytes reads a 'bin' object from b and returns its value and the remaining bytes in b.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a 'bin' object)
+// Possible errors are ErrShortBytes and TypeError{}.
 func ReadBytesBytes(b []byte, scratch []byte) (v []byte, o []byte, err error) {
 	return readBytesBytes(b, scratch, false)
 }
@@ -603,9 +598,7 @@ func readBytesBytes(b []byte, scratch []byte, zc bool) (v []byte, o []byte, err 
 
 // ReadBytesZC extracts the MessagePack-encoded binary field without copying. The returned []byte
 // points to the same memory as the input slice.
-// Possible errors:
-// - ErrShortBytes (b not long enough)
-// - TypeError{} (object not 'bin')
+// Possible errors include ErrShortBytes (b not long enough) and TypeError{} (object not 'bin').
 func ReadBytesZC(b []byte) (v []byte, o []byte, err error) {
 	return readBytesBytes(b, nil, true)
 }
@@ -653,8 +646,8 @@ func ReadExactBytes(b []byte, dst []byte) ([]byte, error) {
 }
 
 // ReadStringZC reads a MessagePack string field without copying. The returned []byte points
-// to the same memory as the input slice. Possible errors include ErrShortBytes (b not long
-// enough) and TypeError{} (object not 'str').
+// to the same memory as the input slice. Possible errors are ErrShortBytes (b not long enough)
+// and TypeError{} (object not 'str').
 func ReadStringZC(b []byte) ([]byte, []byte, error) {
 
 	l := len(b)
