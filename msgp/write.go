@@ -291,7 +291,7 @@ func (mw *Writer) WriteFloat32(f float32) error {
 	return mw.prefix32(mfloat32, math.Float32bits(f))
 }
 
-// WriteInt64 writes an int64 to the writer
+// WriteInt64 writes an int64 to the writer.
 func (mw *Writer) WriteInt64(i int64) error {
 	if i >= 0 {
 		switch {
@@ -334,7 +334,7 @@ func (mw *Writer) WriteInt(i int) error { return mw.WriteInt64(int64(i)) }
 // WriteUint64 writes a uint64 to the writer.
 func (mw *Writer) WriteUint64(u uint64) error {
 	switch {
-	case u <= (1<<7)-1:
+	case u <= math.MaxInt8:
 		return mw.push(wfixint(uint8(u)))
 	case u <= math.MaxUint8:
 		return mw.prefix8(muint8, uint8(u))
@@ -362,18 +362,17 @@ func (mw *Writer) WriteUint32(u uint32) error { return mw.WriteUint64(uint64(u))
 // WriteUint writes a uint to the writer.
 func (mw *Writer) WriteUint(u uint) error { return mw.WriteUint64(uint64(u)) }
 
-// WriteBytes writes binary as 'bin' to the writer.
-func (mw *Writer) WriteBytes(b []byte) error {
-	sz := uint32(len(b))
-	var err error
-	switch {
-	case sz <= math.MaxUint8:
-		err = mw.prefix8(mbin8, uint8(sz))
-	case sz <= math.MaxUint16:
-		err = mw.prefix16(mbin16, uint16(sz))
-	default:
-		err = mw.prefix32(mbin32, sz)
+// WriteBool writes a bool to the writer.
+func (mw *Writer) WriteBool(b bool) error {
+	if b {
+		return mw.push(mtrue)
 	}
+	return mw.push(mfalse)
+}
+
+// WriteBytes writes binary data as 'bin' to the writer.
+func (mw *Writer) WriteBytes(b []byte) error {
+	err := mw.WriteBytesHeader(uint32(len(b)))
 	if err != nil {
 		return err
 	}
@@ -394,39 +393,18 @@ func (mw *Writer) WriteBytesHeader(sz uint32) error {
 	}
 }
 
-// WriteBool writes a bool to the writer.
-func (mw *Writer) WriteBool(b bool) error {
-	if b {
-		return mw.push(mtrue)
-	}
-	return mw.push(mfalse)
-}
-
 // WriteString writes a MessagePack string to the writer.
 // (This is NOT an implementation of io.StringWriter)
 func (mw *Writer) WriteString(s string) error {
-	sz := uint32(len(s))
-	var err error
-	switch {
-	case sz <= 31:
-		err = mw.push(wfixstr(uint8(sz)))
-	case sz <= math.MaxUint8:
-		err = mw.prefix8(mstr8, uint8(sz))
-	case sz <= math.MaxUint16:
-		err = mw.prefix16(mstr16, uint16(sz))
-	default:
-		err = mw.prefix32(mstr32, sz)
-	}
+	err := mw.WriteStringHeader(uint32(len(s)))
 	if err != nil {
 		return err
 	}
 	return mw.writeString(s)
 }
 
-// WriteStringHeader writes just the string size
-// header of a MessagePack 'str' object. The user
-// is responsible for writing 'sz' more valid UTF-8
-// bytes to the stream.
+// WriteStringHeader writes just the string size header of a MessagePack 'str' object.
+// The user is responsible for writing sz more valid UTF-8 bytes to the stream.
 func (mw *Writer) WriteStringHeader(sz uint32) error {
 	switch {
 	case sz <= 31:
@@ -440,20 +418,9 @@ func (mw *Writer) WriteStringHeader(sz uint32) error {
 	}
 }
 
-// WriteStringFromBytes writes a 'str' object from a []byte.
+// WriteStringFromBytes writes a 'str' object from a []byte representing a string.
 func (mw *Writer) WriteStringFromBytes(str []byte) error {
-	sz := uint32(len(str))
-	var err error
-	switch {
-	case sz <= 31:
-		err = mw.push(wfixstr(uint8(sz)))
-	case sz <= math.MaxUint8:
-		err = mw.prefix8(mstr8, uint8(sz))
-	case sz <= math.MaxUint16:
-		err = mw.prefix16(mstr16, uint16(sz))
-	default:
-		err = mw.prefix32(mstr32, sz)
-	}
+	err := mw.WriteStringHeader(uint32(len(str)))
 	if err != nil {
 		return err
 	}
@@ -461,7 +428,7 @@ func (mw *Writer) WriteStringFromBytes(str []byte) error {
 	return err
 }
 
-// WriteComplex64 writes a complex64 to the writer
+// WriteComplex64 writes a complex64 to the writer.
 func (mw *Writer) WriteComplex64(f complex64) error {
 	o, err := mw.require(10)
 	if err != nil {
@@ -531,8 +498,6 @@ func (mw *Writer) WriteMapStrIntf(mp map[string]interface{}) (err error) {
 // The encoded object itself is 12 bytes: 8 bytes for a big-endian 64-bit integer denoting seconds
 // elapsed since "zero" Unix time, followed by 4 bytes for a big-endian 32-bit signed integer denoting
 // the nanosecond offset of the time. This encoding is intended to ease portability across languages.
-// (Note that this is *not* the standard time.Time binary encoding because its implementation relies
-// heavily on the internal representation used by the time package.)
 func (mw *Writer) WriteTime(t time.Time) error {
 	t = t.UTC()
 	o, err := mw.require(15)
