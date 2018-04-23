@@ -81,7 +81,7 @@ type TypeError struct {
 	Encoded Type // Type actually encoded
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (t TypeError) Error() string {
 	return fmt.Sprintf("msgp: attempted to decode type %q with method for %q", t.Encoded, t.Method)
 }
@@ -117,7 +117,7 @@ type ErrUnsupportedType struct {
 	T reflect.Type
 }
 
-// Error implements error
+// Error implements the error interface.
 func (e *ErrUnsupportedType) Error() string { return fmt.Sprintf("msgp: type %q not supported", e.T) }
 
 // Resumable returns true for ErrUnsupportedType.

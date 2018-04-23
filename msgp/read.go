@@ -471,7 +471,7 @@ func (m *Reader) ReadBool() (bool, error) {
 
 // ReadInt64 reads an int64 from the reader. If an int64 is not available, this function tries to read
 // an unsigned integer and convert it to an int64 if possible. Errors that can be returned include
-// UintOverflow and TypeError (for bad prefix).
+// UintOverflow and TypeError.
 func (m *Reader) ReadInt64() (int64, error) {
 
 	p, err := m.R.Peek(1)
@@ -550,7 +550,7 @@ func (m *Reader) ReadInt64() (int64, error) {
 
 }
 
-// ReadInt32 reads an int32 from the reader
+// ReadInt32 reads an int32 from the reader.
 func (m *Reader) ReadInt32() (int32, error) {
 	in, err := m.ReadInt64()
 	if in > math.MaxInt32 || in < math.MinInt32 {
@@ -568,7 +568,7 @@ func (m *Reader) ReadInt16() (int16, error) {
 	return int16(in), err
 }
 
-// ReadInt8 reads an int8 from the reader
+// ReadInt8 reads an int8 from the reader.
 func (m *Reader) ReadInt8() (int8, error) {
 	in, err := m.ReadInt64()
 	if in > math.MaxInt8 || in < math.MinInt8 {
@@ -577,7 +577,7 @@ func (m *Reader) ReadInt8() (int8, error) {
 	return int8(in), err
 }
 
-// ReadInt reads an int from the reader
+// ReadInt reads an int from the reader.
 func (m *Reader) ReadInt() (int, error) {
 	if smallint {
 		in, err := m.ReadInt32()
@@ -635,7 +635,7 @@ func (m *Reader) ReadUint64() (uint64, error) {
 
 }
 
-// ReadUint32 reads a uint32 from the reader
+// ReadUint32 reads a uint32 from the reader.
 func (m *Reader) ReadUint32() (u uint32, err error) {
 	in, err := m.ReadUint64()
 	if in > math.MaxUint32 {
@@ -644,7 +644,7 @@ func (m *Reader) ReadUint32() (u uint32, err error) {
 	return uint32(in), err
 }
 
-// ReadUint16 reads a uint16 from the reader
+// ReadUint16 reads a uint16 from the reader.
 func (m *Reader) ReadUint16() (uint16, error) {
 	in, err := m.ReadUint64()
 	if in > math.MaxUint16 {
@@ -662,7 +662,7 @@ func (m *Reader) ReadUint8() (uint8, error) {
 	return uint8(in), err
 }
 
-// ReadUint reads a uint from the reader
+// ReadUint reads a uint from the reader.
 func (m *Reader) ReadUint() (uint, error) {
 	if smallint {
 		un, err := m.ReadUint32()
@@ -721,7 +721,7 @@ func (m *Reader) ReadBytes(scratch []byte) ([]byte, error) {
 }
 
 // ReadBytesHeader reads the size header of a MessagePack 'bin' object. The user is responsible
-// for dealing with the next 'sz' bytes from the reader in an application-specific way.
+// for dealing with the given number of bytes from the reader in an application-specific way.
 func (m *Reader) ReadBytesHeader() (uint32, error) {
 	p, err := m.R.Peek(1)
 	if err != nil {

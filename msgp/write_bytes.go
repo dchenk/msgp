@@ -34,17 +34,16 @@ func AppendMapHeader(b []byte, sz uint32) []byte {
 	return o
 }
 
-// AppendArrayHeader appends an array header with the given size to b.
+// AppendArrayHeader appends an array header with the given size to b. The size must
+// not be greater than math.MaxUint32.
 func AppendArrayHeader(b []byte, sz uint32) []byte {
 	switch {
 	case sz <= 15:
 		return append(b, wfixarray(uint8(sz)))
-
 	case sz <= math.MaxUint16:
 		o, n := ensure(b, 3)
 		prefixu16(o[n:], marray16, uint16(sz))
 		return o
-
 	default:
 		o, n := ensure(b, 5)
 		prefixu32(o[n:], marray32, sz)
@@ -279,13 +278,12 @@ func AppendMapStrIntf(b []byte, m map[string]interface{}) ([]byte, error) {
 
 // AppendIntf appends the concrete type of i to b. The type of i must be
 // one of the following:
-//  - nil
-//  - bool, float, string, []byte, int, uint, or complex
+//  - bool, float, string, []byte, int, uint, complex, time.Time, or nil
 //  - map[string]interface{} or map[string]string
 //  - []T, where T is another supported type
 //  - *T, where T is another supported type
-//  - type that satisfies the msgp.Marshaler interface
-//  - type that satisfies the msgp.Extension interface
+//  - type that implements the msgp.Marshaler interface
+//  - type that implements the msgp.Extension interface
 func AppendIntf(b []byte, i interface{}) ([]byte, error) {
 
 	if i == nil {
@@ -350,12 +348,12 @@ func AppendIntf(b []byte, i interface{}) ([]byte, error) {
 		return b, nil
 	}
 
-	var err error
 	v := reflect.ValueOf(i)
 	switch v.Kind() {
 	case reflect.Array, reflect.Slice:
 		l := v.Len()
 		b = AppendArrayHeader(b, uint32(l))
+		var err error
 		for i := 0; i < l; i++ {
 			b, err = AppendIntf(b, v.Index(i).Interface())
 			if err != nil {
@@ -365,10 +363,9 @@ func AppendIntf(b []byte, i interface{}) ([]byte, error) {
 		return b, nil
 	case reflect.Ptr:
 		if v.IsNil() {
-			return AppendNil(b), err
+			return AppendNil(b), nil
 		}
-		b, err = AppendIntf(b, v.Elem().Interface())
-		return b, err
+		return AppendIntf(b, v.Elem().Interface())
 	default:
 		return b, &ErrUnsupportedType{T: v.Type()}
 	}

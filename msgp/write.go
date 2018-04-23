@@ -511,14 +511,14 @@ func (mw *Writer) WriteTime(t time.Time) error {
 	return nil
 }
 
-// WriteIntf writes the concrete type of v.
-// WriteIntf will error if v is not one of the following:
-//  - A bool, float, string, []byte, int, uint, or complex
-//  - A map of supported types (with string keys)
-//  - An array or slice of supported types
-//  - A pointer to a supported type
-//  - A type that satisfies the msgp.Encoder interface
-//  - A type that satisfies the msgp.Extension interface
+// WriteIntf writes the concrete type of v. The type of v must
+// be one of the following:
+//  - bool, float, string, []byte, int, uint, complex, time.Time, or nil
+//  - map of supported types, with string keys
+//  - array or slice of supported types
+//  - pointer to a supported type
+//  - type that implements the msgp.Encoder interface
+//  - type that implements the msgp.Extension interface
 func (mw *Writer) WriteIntf(v interface{}) error {
 
 	if v == nil {
