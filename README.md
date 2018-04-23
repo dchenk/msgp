@@ -11,24 +11,24 @@ or at [msgpack.org](https://msgpack.org).
 - Use Go as your schema language
 - Performance is amazing
 - [JSON interop](https://godoc.org/github.com/dchenk/msgp/msgp#CopyToJSON)
-- [User-defined extensions](https://github.com/dchenk/msgp/wiki/Using-Extensions)
+- [Define your own MessagePack extensions](https://github.com/dchenk/msgp/wiki/Using-Extensions)
 - Type safety
 
 ### Quickstart
 
-In a source file, include the following directive:
+In a Go code source file, include the following directive:
 
 ```go
 //go:generate msgp
 ```
 
-The `msgp` command will tell `go generate` to generate serialization and deserialization methods for all exported type declarations in the file.
+The `msgp` command will tell `go generate` to generate serialization and deserialization methods for all exported types in the file.
 
 You can [read more about the code generation options here](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator).
 
 ### Use
 
-Field names can be set in much the same way as with the `encoding/json` package. For example:
+Struct field names can be set the same way as with the `encoding/json` package. For example:
 
 ```go
 type Person struct {
@@ -91,7 +91,7 @@ Here some of the known limitations/restrictions:
 
 - Identifiers from outside the processed source file are assumed to satisfy the generator's interfaces. If this isn't the case, your code
 will fail to compile.
-- The `chan` and `func` fields and types are ignored as well as non-exported fields.
+- The `chan` and `func` fields and types are ignored as well as un-exported fields.
 - Encoding of `interface{}` is limited to built-ins or types that have explicit encoding methods.
 - Maps must have `string` keys. This is intentional (as it preserves JSON interoperability). Although non-string map keys are not 
 forbidden by the MessagePack standard, many serializers impose this restriction. (It also means *any* well-formed `struct` can be 
