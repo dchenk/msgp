@@ -36,8 +36,6 @@ const (
 	Complex64Type
 	Complex128Type
 	TimeType
-
-	_maxtype
 )
 
 // String implements fmt.Stringer
