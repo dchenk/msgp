@@ -183,7 +183,7 @@ func (mw *Writer) WriteExtension(e Extension) error {
 	}
 	// We can only write directly to the buffer if we're sure that it
 	// fits the object.
-	if l <= mw.bufsize() {
+	if l <= len(mw.buf) {
 		o, err := mw.require(l)
 		if err != nil {
 			return err
@@ -202,7 +202,7 @@ func (mw *Writer) WriteExtension(e Extension) error {
 		return err
 	}
 	mw.buf = buf
-	mw.wloc = l
+	mw.wLoc = l
 	return nil
 }
 

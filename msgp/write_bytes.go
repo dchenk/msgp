@@ -6,16 +6,32 @@ import (
 	"time"
 )
 
-// ensure returns a slice with the contents of b with the returned slice having
-// at lease sz extra bytes between its length and capacity.
-func ensure(b []byte, sz int) ([]byte, int) {
-	l := len(b)
-	c := cap(b)
-	if c-l < sz {
-		o := make([]byte, (2*c)+sz)
-		n := copy(o, b)
-		return o[:n+sz], n
+// Require returns a slice (with the contents of old) having a capacity to fit at
+// least extra number of bytes after the current length. The length of the returned
+// slice is the same as the length of the old slice.
+func Require(old []byte, extra int) []byte {
+	l := len(old)
+	c := cap(old)
+	r := l + extra
+	if c >= r {
+		return old
 	}
+	// The new size is the greater of double the old capacity and
+	// the sum of the old length and the number of new bytes needed.
+	c <<= 1
+	if c < r {
+		c = r
+	}
+	n := make([]byte, l, c)
+	copy(n, old)
+	return n
+}
+
+// ensure returns a slice (with the contents of b) having at least sz extra bytes between
+// its length and capacity. The int returned indicates the index at which to write.
+func ensure(b []byte, sz int) ([]byte, int) {
+	b = Require(b, sz)
+	l := len(b)
 	return b[:l+sz], l
 }
 

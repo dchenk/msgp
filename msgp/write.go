@@ -49,7 +49,7 @@ type MarshalSizer interface {
 type Writer struct {
 	w    io.Writer
 	buf  []byte
-	wloc int
+	wLoc int // The index at which to write.
 }
 
 // NewWriter creates a new Writer.
@@ -66,7 +66,7 @@ func NewWriter(w io.Writer) *Writer {
 // NewWriterSize creates a Writer with a custom buffer size.
 func NewWriterSize(w io.Writer, sz int) *Writer {
 	// We must be able to require() 18 contiguous bytes for WriteComplex128,
-	// so that is the practical minimum buffer size.
+	// so that is the practical minimal buffer size.
 	if sz < 18 {
 		sz = 18
 	}
@@ -86,138 +86,121 @@ func Encode(w io.Writer, e Encoder) error {
 	return err
 }
 
-// Require ensures that cap(old)-len(old) >= extra.
-func Require(old []byte, extra int) []byte {
-	l := len(old)
-	c := cap(old)
-	r := l + extra
-	if c >= r {
-		return old
-	} else if l == 0 {
-		return make([]byte, 0, extra)
-	}
-	// The new size is the greater of double the old capacity and
-	// the sum of the old length and the number of new bytes needed.
-	c <<= 1
-	if c < r {
-		c = r
-	}
-	n := make([]byte, l, c)
-	copy(n, old)
-	return n
-}
-
 // Flush flushes all of the buffered data to the underlying writer.
 func (mw *Writer) Flush() error {
-	if mw.wloc == 0 {
+	if mw.wLoc == 0 {
 		return nil
 	}
-	n, err := mw.w.Write(mw.buf[:mw.wloc])
+	n, err := mw.w.Write(mw.buf[:mw.wLoc])
 	if err != nil {
 		if n > 0 {
-			mw.wloc = copy(mw.buf, mw.buf[n:mw.wloc])
+			mw.wLoc = copy(mw.buf, mw.buf[n:mw.wLoc])
 		}
 		return err
 	}
-	mw.wloc = 0
+	if n < mw.wLoc {
+		return io.ErrShortWrite
+	}
+	mw.wLoc = 0
 	return nil
 }
 
-// Buffered returns the number bytes in the write buffer.
-func (mw *Writer) Buffered() int { return len(mw.buf) - mw.wloc }
+// OpenSpace returns the number of bytes currently free for writing to the write buffer.
+func (mw *Writer) OpenSpace() int { return len(mw.buf) - mw.wLoc }
 
-func (mw *Writer) bufsize() int { return len(mw.buf) }
-
-// NOTE: require should only be called with a number that is guaranteed to be
-// less than len(mw.buf). Typically, it is called with a constant.
+// require ensures that, starting at the index returned as an int here, you can
+// immediately write n bytes to the buffer.
+//
+// Important: This function must only be called with a number that is guaranteed
+// to be less than len(mw.buf). Typically, it is called with a constant.
 func (mw *Writer) require(n int) (int, error) {
-	wl := mw.wloc
-	if len(mw.buf)-wl < n {
+	wl := mw.wLoc
+	if mw.OpenSpace() < n {
 		if err := mw.Flush(); err != nil {
 			return 0, err
 		}
-		wl = mw.wloc
+		wl = mw.wLoc
 	}
-	mw.wloc += n
+	mw.wLoc += n
 	return wl, nil
 }
 
-// Append appends to the buffer any number of single bytes.
+// Append can be used to append a few (no more than the total buffer length) single
+// bytes to the buffer.
 func (mw *Writer) Append(bts ...byte) error {
-	if mw.Buffered() < len(bts) {
-		err := mw.Flush()
-		if err != nil {
+	if mw.OpenSpace() < len(bts) {
+		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	mw.wloc += copy(mw.buf[mw.wloc:], bts)
+	mw.wLoc += copy(mw.buf[mw.wLoc:], bts)
 	return nil
 }
 
 // push pushes one byte onto the buffer.
 func (mw *Writer) push(b byte) error {
-	if mw.wloc == len(mw.buf) {
+	if mw.wLoc == len(mw.buf) {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	mw.buf[mw.wloc] = b
-	mw.wloc++
+	mw.buf[mw.wLoc] = b
+	mw.wLoc++
 	return nil
 }
 
 func (mw *Writer) prefix8(b byte, u uint8) error {
 	const need = 2
-	if len(mw.buf)-mw.wloc < need {
+	if mw.OpenSpace() < need {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	prefixu8(mw.buf[mw.wloc:], b, u)
-	mw.wloc += need
+	prefixu8(mw.buf[mw.wLoc:], b, u)
+	mw.wLoc += need
 	return nil
 }
 
 func (mw *Writer) prefix16(b byte, u uint16) error {
 	const need = 3
-	if len(mw.buf)-mw.wloc < need {
+	if mw.OpenSpace() < need {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	prefixu16(mw.buf[mw.wloc:], b, u)
-	mw.wloc += need
+	prefixu16(mw.buf[mw.wLoc:], b, u)
+	mw.wLoc += need
 	return nil
 }
 
 func (mw *Writer) prefix32(b byte, u uint32) error {
 	const need = 5
-	if len(mw.buf)-mw.wloc < need {
+	if mw.OpenSpace() < need {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	prefixu32(mw.buf[mw.wloc:], b, u)
-	mw.wloc += need
+	prefixu32(mw.buf[mw.wLoc:], b, u)
+	mw.wLoc += need
 	return nil
 }
 
 func (mw *Writer) prefix64(b byte, u uint64) error {
 	const need = 9
-	if len(mw.buf)-mw.wloc < need {
+	if mw.OpenSpace() < need {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 	}
-	prefixu64(mw.buf[mw.wloc:], b, u)
-	mw.wloc += need
+	prefixu64(mw.buf[mw.wLoc:], b, u)
+	mw.wLoc += need
 	return nil
 }
 
 // Write implements io.Writer to write directly to the buffer.
 func (mw *Writer) Write(p []byte) (int, error) {
 	l := len(p)
-	if mw.Buffered() < l {
+	if mw.OpenSpace() < l {
 		if err := mw.Flush(); err != nil {
 			return 0, err
 		}
@@ -225,23 +208,29 @@ func (mw *Writer) Write(p []byte) (int, error) {
 			return mw.w.Write(p)
 		}
 	}
-	mw.wloc += copy(mw.buf[mw.wloc:], p)
+	mw.wLoc += copy(mw.buf[mw.wLoc:], p)
 	return l, nil
 }
 
 // writeString writes s to the buffer.
 func (mw *Writer) writeString(s string) error {
 	l := len(s)
-	if mw.Buffered() < l {
+	if mw.OpenSpace() < l {
 		if err := mw.Flush(); err != nil {
 			return err
 		}
 		if l > len(mw.buf) {
-			_, err := io.WriteString(mw.w, s)
-			return err
+			n, err := io.WriteString(mw.w, s)
+			if err != nil {
+				return err
+			}
+			if n < l {
+				return io.ErrShortWrite
+			}
+			return nil
 		}
 	}
-	mw.wloc += copy(mw.buf[mw.wloc:], s)
+	mw.wLoc += copy(mw.buf[mw.wLoc:], s)
 	return nil
 }
 
@@ -249,7 +238,7 @@ func (mw *Writer) writeString(s string) error {
 func (mw *Writer) Reset(w io.Writer) {
 	mw.buf = mw.buf[:cap(mw.buf)]
 	mw.w = w
-	mw.wloc = 0
+	mw.wLoc = 0
 }
 
 // WriteMapHeader writes a map header of the given size to the buffer.
@@ -347,11 +336,13 @@ func (mw *Writer) WriteUint64(u uint64) error {
 	}
 }
 
-// WriteByte is analogous to WriteUint8.
-func (mw *Writer) WriteByte(u byte) error { return mw.WriteUint8(uint8(u)) }
-
 // WriteUint8 writes a uint8 to the writer.
-func (mw *Writer) WriteUint8(u uint8) error { return mw.WriteUint64(uint64(u)) }
+func (mw *Writer) WriteUint8(u uint8) error {
+	if u <= math.MaxInt8 {
+		return mw.push(wfixint(u))
+	}
+	return mw.prefix8(muint8, u)
+}
 
 // WriteUint16 writes a uint16 to the writer.
 func (mw *Writer) WriteUint16(u uint16) error { return mw.WriteUint64(uint64(u)) }
@@ -361,6 +352,9 @@ func (mw *Writer) WriteUint32(u uint32) error { return mw.WriteUint64(uint64(u))
 
 // WriteUint writes a uint to the writer.
 func (mw *Writer) WriteUint(u uint) error { return mw.WriteUint64(uint64(u)) }
+
+// WriteByte does the same thing as WriteUint8.
+func (mw *Writer) WriteByte(u byte) error { return mw.WriteUint8(u) }
 
 // WriteBool writes a bool to the writer.
 func (mw *Writer) WriteBool(b bool) error {
@@ -430,27 +424,27 @@ func (mw *Writer) WriteStringFromBytes(str []byte) error {
 
 // WriteComplex64 writes a complex64 to the writer.
 func (mw *Writer) WriteComplex64(f complex64) error {
-	o, err := mw.require(10)
+	i, err := mw.require(10)
 	if err != nil {
 		return err
 	}
-	mw.buf[o] = mfixext8
-	mw.buf[o+1] = Complex64Extension
-	big.PutUint32(mw.buf[o+2:], math.Float32bits(real(f)))
-	big.PutUint32(mw.buf[o+6:], math.Float32bits(imag(f)))
+	mw.buf[i] = mfixext8
+	mw.buf[i+1] = Complex64Extension
+	big.PutUint32(mw.buf[i+2:], math.Float32bits(real(f)))
+	big.PutUint32(mw.buf[i+6:], math.Float32bits(imag(f)))
 	return nil
 }
 
 // WriteComplex128 writes a complex128 to the writer
 func (mw *Writer) WriteComplex128(f complex128) error {
-	o, err := mw.require(18)
+	i, err := mw.require(18)
 	if err != nil {
 		return err
 	}
-	mw.buf[o] = mfixext16
-	mw.buf[o+1] = Complex128Extension
-	big.PutUint64(mw.buf[o+2:], math.Float64bits(real(f)))
-	big.PutUint64(mw.buf[o+10:], math.Float64bits(imag(f)))
+	mw.buf[i] = mfixext16
+	mw.buf[i+1] = Complex128Extension
+	big.PutUint64(mw.buf[i+2:], math.Float64bits(real(f)))
+	big.PutUint64(mw.buf[i+10:], math.Float64bits(imag(f)))
 	return nil
 }
 
@@ -500,14 +494,14 @@ func (mw *Writer) WriteMapStrIntf(mp map[string]interface{}) (err error) {
 // the nanosecond offset of the time. This encoding is intended to ease portability across languages.
 func (mw *Writer) WriteTime(t time.Time) error {
 	t = t.UTC()
-	o, err := mw.require(15)
+	i, err := mw.require(15)
 	if err != nil {
 		return err
 	}
-	mw.buf[o] = mext8
-	mw.buf[o+1] = 12
-	mw.buf[o+2] = TimeExtension
-	putUnix(mw.buf[o+3:], t.Unix(), int32(t.Nanosecond()))
+	mw.buf[i] = mext8
+	mw.buf[i+1] = 12
+	mw.buf[i+2] = TimeExtension
+	putUnix(mw.buf[i+3:], t.Unix(), int32(t.Nanosecond()))
 	return nil
 }
 

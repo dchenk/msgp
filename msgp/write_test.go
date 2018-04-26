@@ -26,6 +26,25 @@ func RandBytes(sz int) []byte {
 	return out
 }
 
+// TestWriterSized tests that it's possible to create a relatively small writer buffer
+// but append to it a lot of data.
+func TestWriterSized(t *testing.T) {
+
+	var buf bytes.Buffer
+	wr := NewWriterSize(&buf, 32)
+	bts := RandBytes(300)
+	err := wr.Append(bts...)
+	if err != nil {
+		t.Error("doing Append;", err)
+	}
+	bts = bytes.Repeat([]byte("na"), 350)
+	err = wr.writeString(string(bts))
+	if err != nil {
+		t.Error("doing writeString;", err)
+	}
+
+}
+
 func TestWriteMapHeader(t *testing.T) {
 
 	tests := []struct {
@@ -334,6 +353,29 @@ func BenchmarkWriteUint64(b *testing.B) {
 		wr.WriteUint64(uint64(tuint64))
 	}
 }
+
+func BenchmarkWriteUint8(b *testing.B) {
+	wr := NewWriter(Nowhere)
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		wr.WriteUint8(2)
+		wr.WriteUint8(17)
+		wr.WriteUint8(203)
+	}
+}
+
+//func BenchmarkWriteUint8old(b *testing.B) {
+//	wr := NewWriter(Nowhere)
+//	b.ResetTimer()
+//	for i := 0; i < b.N; i++ {
+//		wr.WriteUint8old(2)
+//		wr.WriteUint8old(17)
+//		wr.WriteUint8old(203)
+//	}
+//}
+
+// WriteUint8old writes a uint8 to the writer. This is the original version of the function.
+//func (mw *Writer) WriteUint8old(u uint8) error { return mw.WriteUint64(uint64(u)) }
 
 func TestWriteBytes(t *testing.T) {
 	var buf bytes.Buffer
