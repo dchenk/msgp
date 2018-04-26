@@ -309,7 +309,15 @@ func (mw *Writer) WriteInt64(i int64) error {
 }
 
 // WriteInt8 writes an int8 to the writer.
-func (mw *Writer) WriteInt8(i int8) error { return mw.WriteInt64(int64(i)) }
+func (mw *Writer) WriteInt8(i int8) error {
+	if i >= 0 {
+		return mw.push(wfixint(uint8(i)))
+	}
+	if i >= -32 {
+		return mw.push(wnfixint(i))
+	}
+	return mw.prefix8(mint8, uint8(i))
+}
 
 // WriteInt16 writes an int16 to the writer.
 func (mw *Writer) WriteInt16(i int16) error { return mw.WriteInt64(int64(i)) }

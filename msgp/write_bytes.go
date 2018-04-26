@@ -126,11 +126,18 @@ func AppendInt64(b []byte, i int64) []byte {
 	}
 }
 
-// AppendInt appends an int b.
-func AppendInt(b []byte, i int) []byte { return AppendInt64(b, int64(i)) }
-
 // AppendInt8 appends an int8 b.
-func AppendInt8(b []byte, i int8) []byte { return AppendInt64(b, int64(i)) }
+func AppendInt8(b []byte, i int8) []byte {
+	if i >= 0 {
+		return append(b, wfixint(uint8(i)))
+	}
+	if i >= -32 {
+		return append(b, wnfixint(int8(i)))
+	}
+	o, n := ensure(b, 2)
+	putMint8(o[n:], i)
+	return o
+}
 
 // AppendInt16 appends an int16 b.
 func AppendInt16(b []byte, i int16) []byte { return AppendInt64(b, int64(i)) }
@@ -141,7 +148,7 @@ func AppendInt32(b []byte, i int32) []byte { return AppendInt64(b, int64(i)) }
 // AppendUint64 appends a uint64 b.
 func AppendUint64(b []byte, u uint64) []byte {
 	switch {
-	case u <= 127:
+	case u <= math.MaxInt8:
 		return append(b, wfixint(uint8(u)))
 	case u <= math.MaxUint8:
 		o, n := ensure(b, 2)
@@ -166,16 +173,26 @@ func AppendUint64(b []byte, u uint64) []byte {
 func AppendUint(b []byte, u uint) []byte { return AppendUint64(b, uint64(u)) }
 
 // AppendUint8 appends a uint8 b.
-func AppendUint8(b []byte, u uint8) []byte { return AppendUint64(b, uint64(u)) }
-
-// AppendByte is analogous to AppendUint8
-func AppendByte(b []byte, u byte) []byte { return AppendUint8(b, uint8(u)) }
+func AppendUint8(b []byte, u uint8) []byte {
+	if u <= math.MaxInt8 {
+		return append(b, wfixint(uint8(u)))
+	}
+	o, n := ensure(b, 2)
+	putMuint8(o[n:], u)
+	return o
+}
 
 // AppendUint16 appends a uint16 b.
 func AppendUint16(b []byte, u uint16) []byte { return AppendUint64(b, uint64(u)) }
 
 // AppendUint32 appends a uint32 b.
 func AppendUint32(b []byte, u uint32) []byte { return AppendUint64(b, uint64(u)) }
+
+// AppendInt appends an int b.
+func AppendInt(b []byte, i int) []byte { return AppendInt64(b, int64(i)) }
+
+// AppendByte does the same thing as AppendUint8
+func AppendByte(b []byte, u byte) []byte { return AppendUint8(b, u) }
 
 // AppendBytes appends bytes b as MessagePack 'bin' data.
 func AppendBytes(b []byte, bts []byte) []byte {

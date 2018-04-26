@@ -111,84 +111,84 @@ func (mw *Writer) WriteExtension(e Extension) error {
 	l := e.Len()
 	switch l {
 	case 0:
-		o, err := mw.require(3)
+		i, err := mw.require(3)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mext8
-		mw.buf[o+1] = 0
-		mw.buf[o+2] = byte(e.ExtensionType())
+		mw.buf[i] = mext8
+		mw.buf[i+1] = 0
+		mw.buf[i+2] = byte(e.ExtensionType())
 	case 1:
-		o, err := mw.require(2)
+		i, err := mw.require(2)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mfixext1
-		mw.buf[o+1] = byte(e.ExtensionType())
+		mw.buf[i] = mfixext1
+		mw.buf[i+1] = byte(e.ExtensionType())
 	case 2:
-		o, err := mw.require(2)
+		i, err := mw.require(2)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mfixext2
-		mw.buf[o+1] = byte(e.ExtensionType())
+		mw.buf[i] = mfixext2
+		mw.buf[i+1] = byte(e.ExtensionType())
 	case 4:
-		o, err := mw.require(2)
+		i, err := mw.require(2)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mfixext4
-		mw.buf[o+1] = byte(e.ExtensionType())
+		mw.buf[i] = mfixext4
+		mw.buf[i+1] = byte(e.ExtensionType())
 	case 8:
-		o, err := mw.require(2)
+		i, err := mw.require(2)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mfixext8
-		mw.buf[o+1] = byte(e.ExtensionType())
+		mw.buf[i] = mfixext8
+		mw.buf[i+1] = byte(e.ExtensionType())
 	case 16:
-		o, err := mw.require(2)
+		i, err := mw.require(2)
 		if err != nil {
 			return err
 		}
-		mw.buf[o] = mfixext16
-		mw.buf[o+1] = byte(e.ExtensionType())
+		mw.buf[i] = mfixext16
+		mw.buf[i+1] = byte(e.ExtensionType())
 	default:
 		switch {
 		case l < math.MaxUint8:
-			o, err := mw.require(3)
+			i, err := mw.require(3)
 			if err != nil {
 				return err
 			}
-			mw.buf[o] = mext8
-			mw.buf[o+1] = byte(uint8(l))
-			mw.buf[o+2] = byte(e.ExtensionType())
+			mw.buf[i] = mext8
+			mw.buf[i+1] = byte(uint8(l))
+			mw.buf[i+2] = byte(e.ExtensionType())
 		case l < math.MaxUint16:
-			o, err := mw.require(4)
+			i, err := mw.require(4)
 			if err != nil {
 				return err
 			}
-			mw.buf[o] = mext16
-			big.PutUint16(mw.buf[o+1:], uint16(l))
-			mw.buf[o+3] = byte(e.ExtensionType())
+			mw.buf[i] = mext16
+			big.PutUint16(mw.buf[i+1:], uint16(l))
+			mw.buf[i+3] = byte(e.ExtensionType())
 		default:
-			o, err := mw.require(6)
+			i, err := mw.require(6)
 			if err != nil {
 				return err
 			}
-			mw.buf[o] = mext32
-			big.PutUint32(mw.buf[o+1:], uint32(l))
-			mw.buf[o+5] = byte(e.ExtensionType())
+			mw.buf[i] = mext32
+			big.PutUint32(mw.buf[i+1:], uint32(l))
+			mw.buf[i+5] = byte(e.ExtensionType())
 		}
 	}
 	// We can only write directly to the buffer if we're sure that it
 	// fits the object.
 	if l <= len(mw.buf) {
-		o, err := mw.require(l)
+		i, err := mw.require(l)
 		if err != nil {
 			return err
 		}
-		return e.MarshalBinaryTo(mw.buf[o:])
+		return e.MarshalBinaryTo(mw.buf[i:])
 	}
 	// Here we create a new buffer just large enough for the body
 	// and save it as the write buffer.

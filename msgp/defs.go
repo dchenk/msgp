@@ -123,7 +123,7 @@ func wfixstr(u uint8) byte {
 }
 
 func rfixarray(b byte) uint8 {
-	return (b & last4)
+	return b & last4
 }
 
 func wfixarray(u uint8) byte {
