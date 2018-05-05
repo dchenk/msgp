@@ -16,7 +16,7 @@ or at [msgpack.org](https://msgpack.org).
 - Define your own [MessagePack extensions](https://github.com/dchenk/msgp/wiki/Using-Extensions)
 - Automatic unit test and benchmark generation
 - Native support for Go’s `time.Time`, `complex64`, and `complex128` types
-- [Preprocessor directives](https://github.com/dchenk/msgp/wiki/Preprocessor-Directives)
+- [Preprocessor directives](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator)
 - Generation of both `[]byte`-oriented and `io.Reader/io.Writer`-oriented methods
 
 ### Quickstart
