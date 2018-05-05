@@ -6,13 +6,18 @@
 This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki)
 or at [msgpack.org](https://msgpack.org).
 
-### Why MessagePack and This Tool?
+### Top Features
 
 - Use Go as your schema language
 - Performance is amazing
-- [JSON interop](https://godoc.org/github.com/dchenk/msgp/msgp#CopyToJSON)
-- [Define your own MessagePack extensions](https://github.com/dchenk/msgp/wiki/Using-Extensions)
+- JSON [interoperability](https://godoc.org/github.com/dchenk/msgp/msgp#CopyToJSON)
 - Type safety
+- Support for complex type declarations
+- Define your own [MessagePack extensions](https://github.com/dchenk/msgp/wiki/Using-Extensions)
+- Automatic unit test and benchmark generation
+- Native support for Go’s `time.Time`, `complex64`, and `complex128` types
+- [Preprocessor directives](https://github.com/dchenk/msgp/wiki/Preprocessor-Directives)
+- Generation of both `[]byte`-oriented and `io.Reader/io.Writer`-oriented methods
 
 ### Quickstart
 
@@ -43,22 +48,11 @@ type Person struct {
 (The struct field tags are optional.)
 
 By default, the code generator will satisfy `msgp.Sizer`, `msgp.Encoder`, `msgp.Decoder`, `msgp.Marshaler`, and `msgp.Unmarshaler`.
-Carefully-designed applications can use these methods to do marshalling/unmarshalling with zero heap allocations.
+You’ll often find that much marshalling and unmarshalling will be done with zero heap allocations.
 
-While `msgp.Marshaler` and `msgp.Unmarshaler` are quite similar to the standard library's`json.Marshaler` and `json.Unmarshaler`,
+Although `msgp.Marshaler` and `msgp.Unmarshaler` are similar to the standard library’s `json.Marshaler` and `json.Unmarshaler`,
 `msgp.Encoder` and `msgp.Decoder` are useful for stream serialization. (`*msgp.Writer` and `*msgp.Reader` are essentially
 protocol-aware versions of `*bufio.Writer` and `*bufio.Reader`.)
-
-### Features
-
- - Extremely fast generated code
- - Test and benchmark generation
- - JSON interoperability (see `msgp.CopyToJSON() and msgp.UnmarshalAsJSON()`)
- - Support for complex type declarations
- - Native support for Go's `time.Time`, `complex64`, and `complex128` types 
- - Generation of both `[]byte`-oriented and `io.Reader/io.Writer`-oriented methods
- - Support for arbitrary type system extensions
- - [Preprocessor directives](https://github.com/dchenk/msgp/wiki/Preprocessor-Directives)
 
 Consider the following:
 ```go
@@ -93,12 +87,12 @@ Here some of the known limitations/restrictions:
 will fail to compile.
 - The `chan` and `func` fields and types are ignored as well as un-exported fields.
 - Encoding of `interface{}` is limited to built-ins or types that have explicit encoding methods.
-- Maps must have `string` keys. This is intentional (as it preserves JSON interoperability). Although non-string map keys are not 
-forbidden by the MessagePack standard, many serializers impose this restriction. (It also means *any* well-formed `struct` can be 
-de-serialized into a `map[string]interface{}`.) The only exception to this rule is that the deserializers will allow you to read map keys
-encoded as `bin` types, since some legacy encodings permitted this. (However, those values will still be cast to Go `string`s, and they
-will be converted to `str` types when re-encoded. It is the responsibility of the user to ensure that map keys are UTF-8 safe in this case.)
-The same rules hold true for JSON translation.
+- Maps must have `string` keys. This is intentional (as it preserves JSON interoperability). Although non-string map keys are not forbidden
+by the MessagePack standard, many serializers impose this restriction. (It also means *any* well-formed `struct` can be decoded into a
+`map[string]interface{}`.) The only exception to this rule is that the decoders will allow you to read map keys encoded as `bin` types,
+since some legacy encodings permitted this. (However, those values will still be cast to Go `string`s, and they will be converted to `str`
+types when re-encoded. It is the responsibility of the user to ensure that map keys are UTF-8 safe in this case.) The same rules hold true
+for JSON translation.
 
 If the output compiles, then there's a pretty good chance things are fine. (Plus, we generate tests for you.) Please file an issue if you
 think the generator is writing broken code.
@@ -110,8 +104,7 @@ and [here](https://github.com/alecthomas/go_serialization_benchmarks).
 
 ## Credits
 
-This repository is a fork of [github.com/tinylib/msgp](https://github.com/tinylib/msgp). The original authors did a great job, but
-this repository takes the project in a new and better direction.
+This repository is a fork of [github.com/tinylib/msgp](https://github.com/tinylib/msgp).
 
 Differences between this tool and tinylib/msgp:
 - Here we have [regular expression matching](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator#matching-type-names) for type
