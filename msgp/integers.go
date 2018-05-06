@@ -95,11 +95,11 @@ func getMuint16(b []byte) uint16 {
 
 func putMuint8(b []byte, u uint8) {
 	b[0] = muint8
-	b[1] = byte(u)
+	b[1] = u
 }
 
 func getMuint8(b []byte) uint8 {
-	return uint8(b[1])
+	return b[1]
 }
 
 // putUnix puts into b the Unix time given in seconds and nanoseconds. The slice b must be at least
@@ -131,10 +131,10 @@ func getUnix(b []byte) (int64, int32) {
 
 // Prefix Utilities:
 
-// prefixu8 writes a prefix at b[0] and the uint8 at b[1].
+// prefixu8 writes the prefix pre at b[0] and sz at b[1].
 func prefixu8(b []byte, pre byte, sz uint8) {
 	b[0] = pre
-	b[1] = byte(sz)
+	b[1] = sz
 }
 
 // prefixu16 writes a prefix at b[0] and a big-endian uint16 at b[1:3].
