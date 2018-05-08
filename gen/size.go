@@ -188,7 +188,7 @@ func (s *sizeGen) gBase(b *BaseElem) {
 		s.p.printf("\nvar %s %s", vname, b.BaseType())
 
 		// Ensure we don't get "unused variable" warnings from outer slice iterations.
-		s.p.printf("\n_ = %s", b.Varname())
+		s.p.blankAssign(b.Varname())
 
 		s.p.printf("\ns += %s", baseSizeExpr(b.Value, vname, b.BaseName()))
 		s.state = expr

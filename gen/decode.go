@@ -23,7 +23,8 @@ func (d *decodeGen) needsField() {
 	if d.hasField {
 		return
 	}
-	d.p.print("\nvar field []byte; _ = field")
+	d.p.print("\nvar field []byte")
+	d.p.blankAssign("field")
 	d.hasField = true
 }
 

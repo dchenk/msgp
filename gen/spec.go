@@ -283,6 +283,13 @@ func (p *printer) declare(name string, typ string) {
 	p.printf("\nvar %s %s", name, typ)
 }
 
+// blankAssign writes a newline and an assignment of varName to the blank identifier.
+// This pattern is used (for now) to ensure that we don't get "unused variable" errors
+// from the compiler.
+func (p *printer) blankAssign(varName string) {
+	p.print("\n_ = " + varName)
+}
+
 // resizeMap does:
 //
 // if m != nil && size > 0 {

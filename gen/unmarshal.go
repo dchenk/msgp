@@ -23,7 +23,8 @@ func (u *unmarshalGen) needsField() {
 	if u.hasField {
 		return
 	}
-	u.p.print("\nvar field []byte; _ = field")
+	u.p.print("\nvar field []byte")
+	u.p.blankAssign("field")
 	u.hasField = true
 }
 
