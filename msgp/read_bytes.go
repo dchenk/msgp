@@ -171,44 +171,29 @@ func ReadMapKeyZC(b []byte) ([]byte, []byte, error) {
 	return o, b, err
 }
 
-// ReadArrayHeaderBytes attempts to read the array header size off of b and return the size
-// and remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not an array)
-func ReadArrayHeaderBytes(b []byte) (sz uint32, o []byte, err error) {
+// ReadArrayHeaderBytes reads the array header size off of b and returns the array length
+// and any remaining bytes. Possible errors are ErrShortBytes and TypeError.
+func ReadArrayHeaderBytes(b []byte) (uint32, []byte, error) {
 	if len(b) < 1 {
 		return 0, nil, ErrShortBytes
 	}
 	lead := b[0]
 	if isfixarray(lead) {
-		sz = uint32(rfixarray(lead))
-		o = b[1:]
-		return
+		return uint32(rfixarray(lead)), b[1:], nil
 	}
-
 	switch lead {
 	case marray16:
 		if len(b) < 3 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		sz = uint32(big.Uint16(b[1:]))
-		o = b[3:]
-		return
-
+		return uint32(big.Uint16(b[1:])), b[3:], nil
 	case marray32:
 		if len(b) < 5 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		sz = big.Uint32(b[1:])
-		o = b[5:]
-		return
-
+		return big.Uint32(b[1:]), b[5:], nil
 	default:
-		err = badPrefix(ArrayType, lead)
-		return
+		return 0, b, badPrefix(ArrayType, lead)
 	}
 }
 
