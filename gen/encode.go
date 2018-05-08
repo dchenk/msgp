@@ -185,7 +185,7 @@ func (e *encodeGen) gBase(b *BaseElem) {
 			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
-			e.p.printf("\nvar %s %s", vname, b.BaseType())
+			e.p.declare(vname, b.BaseType())
 			e.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			e.p.printf(errCheck)
 		}

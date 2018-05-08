@@ -114,11 +114,12 @@ func (d *decodeGen) gBase(b *BaseElem) {
 		return
 	}
 
-	// open block for 'tmp'
 	var tmp string
 	if b.Convert {
+		// Open 'tmp' block.
+		d.p.print("\n{")
 		tmp = randIdent()
-		d.p.printf("\n{ var %s %s", tmp, b.BaseType())
+		d.p.declare(tmp, b.BaseType())
 	}
 
 	vname := b.Varname()  // e.g. "z.FieldOne"
@@ -145,8 +146,8 @@ func (d *decodeGen) gBase(b *BaseElem) {
 	}
 	d.p.print(errCheck)
 
-	// close block for 'tmp'
 	if b.Convert {
+		// Close 'tmp' block.
 		if b.ShimMode == Cast {
 			d.p.printf("\n%s = %s(%s)\n}", vname, b.FromBase(), tmp)
 		} else {

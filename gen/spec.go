@@ -279,7 +279,7 @@ type printer struct {
 }
 
 // writes "var {{name}} {{typ}}"
-func (p *printer) declare(name string, typ string) {
+func (p *printer) declare(name, typ string) {
 	p.printf("\nvar %s %s", name, typ)
 }
 

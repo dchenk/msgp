@@ -185,7 +185,7 @@ func (s *sizeGen) gBase(b *BaseElem) {
 	if b.Convert && b.ShimMode == Convert {
 		s.state = add
 		vname := randIdent()
-		s.p.printf("\nvar %s %s", vname, b.BaseType())
+		s.p.declare(vname, b.BaseType())
 
 		// Ensure we don't get "unused variable" warnings from outer slice iterations.
 		s.p.blankAssign(b.Varname())

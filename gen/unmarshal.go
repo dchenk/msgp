@@ -119,11 +119,13 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 
 	refname := b.Varname() // assigned to
 	lowered := b.Varname() // passed as argument
+
 	if b.Convert {
-		// begin 'tmp' block
-		refname = randIdent()
+		// Open 'tmp' block.
 		lowered = b.ToBase() + "(" + lowered + ")"
-		u.p.printf("\n{\nvar %s %s", refname, b.BaseType())
+		u.p.print("\n{") // inner scope
+		refname = randIdent()
+		u.p.declare(refname, b.BaseType())
 	}
 
 	switch b.Value {
@@ -139,7 +141,7 @@ func (u *unmarshalGen) gBase(b *BaseElem) {
 	u.p.print(errCheck)
 
 	if b.Convert {
-		// Close 'tmp' block
+		// Close 'tmp' block.
 		if b.ShimMode == Cast {
 			u.p.printf("\n%s = %s(%s)\n", b.Varname(), b.FromBase(), refname)
 		} else {
