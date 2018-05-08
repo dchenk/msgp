@@ -515,9 +515,9 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 	return ReadUint8Bytes(b)
 }
 
-// ReadBytesBytes reads a 'bin' object from b and returns its value and the remaining bytes in b.
-// Possible errors are ErrShortBytes and TypeError{}.
-func ReadBytesBytes(b []byte, scratch []byte) (v []byte, o []byte, err error) {
+// ReadBytesBytes reads a 'bin' object from b and returns its value and the remaining bytes.
+// Possible errors are ErrShortBytes and TypeError.
+func ReadBytesBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
 	return readBytesBytes(b, scratch, false)
 }
 
