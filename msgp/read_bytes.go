@@ -278,7 +278,7 @@ func ReadBoolBytes(b []byte) (bool, []byte, error) {
 }
 
 // ReadInt64Bytes reads an int64 from b and return the value and the remaining bytes.
-// Errors that can be returned include ErrShortBytes, UintOverflow, InvalidPrefixError, and TypeError.
+// Errors that can be returned are ErrShortBytes, UintOverflow, InvalidPrefixError, and TypeError.
 func ReadInt64Bytes(b []byte) (int64, []byte, error) {
 
 	l := len(b)
@@ -500,81 +500,71 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 	return ReadUint8Bytes(b)
 }
 
-// ReadBytesBytes reads a 'bin' object from b and returns its value and the remaining bytes.
+// ReadBytesBytes reads a 'bin' object from b and returns its value and any remaining bytes.
+// The data is copied to the scratch slice if it's big enough, otherwise a slice is allocated.
 // Possible errors are ErrShortBytes and TypeError.
 func ReadBytesBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
 	return readBytesBytes(b, scratch, false)
 }
 
-func readBytesBytes(b []byte, scratch []byte, zc bool) (v []byte, o []byte, err error) {
+func readBytesBytes(b []byte, scratch []byte, zc bool) ([]byte, []byte, error) {
 	l := len(b)
 	if l < 1 {
 		return nil, b, ErrShortBytes
 	}
 
-	lead := b[0]
-	var read int
-	switch lead {
+	var dataLen int
+
+	switch lead := b[0]; lead {
 	case mbin8:
 		if l < 2 {
-			err = ErrShortBytes
-			return
+			return nil, b, ErrShortBytes
 		}
-
-		read = int(b[1])
+		dataLen = int(b[1])
 		b = b[2:]
-
 	case mbin16:
 		if l < 3 {
-			err = ErrShortBytes
-			return
+			return nil, b, ErrShortBytes
 		}
-		read = int(big.Uint16(b[1:]))
+		dataLen = int(big.Uint16(b[1:]))
 		b = b[3:]
-
 	case mbin32:
 		if l < 5 {
-			err = ErrShortBytes
-			return
+			return nil, b, ErrShortBytes
 		}
-		read = int(big.Uint32(b[1:]))
+		dataLen = int(big.Uint32(b[1:]))
 		b = b[5:]
-
 	default:
-		err = badPrefix(BinType, lead)
-		return
+		return nil, b, badPrefix(BinType, lead)
 	}
 
-	if len(b) < read {
-		err = ErrShortBytes
-		return
+	if len(b) < dataLen {
+		return nil, b, ErrShortBytes
 	}
 
 	// zero-copy
 	if zc {
-		v = b[0:read]
-		o = b[read:]
-		return
+		return b[0:dataLen], b[dataLen:], nil
 	}
 
-	if cap(scratch) >= read {
-		v = scratch[0:read]
+	if cap(scratch) >= dataLen {
+		scratch = scratch[0:dataLen]
 	} else {
-		v = make([]byte, read)
+		scratch = make([]byte, dataLen)
 	}
 
-	o = b[copy(v, b):]
-	return
+	copy(scratch, b)
+	return scratch, b[dataLen:], nil
 }
 
-// ReadBytesZC extracts the MessagePack-encoded binary field without copying. The returned []byte
-// points to the same memory as the input slice.
-// Possible errors include ErrShortBytes (b not long enough) and TypeError{} (object not 'bin').
-func ReadBytesZC(b []byte) (v []byte, o []byte, err error) {
+// ReadBytesZC extracts a 'bin' object from b without copying. The first slice returned points
+// to the same memory as the input slice, and the second slice is any remaining bytes.
+// Possible errors are ErrShortBytes and TypeError.
+func ReadBytesZC(b []byte) ([]byte, []byte, error) {
 	return readBytesBytes(b, nil, true)
 }
 
-// ReadExactBytes reads into dst the bytes expected with the first object in b.
+// ReadExactBytes reads into dst the bytes expected with the next object in b.
 func ReadExactBytes(b []byte, dst []byte) ([]byte, error) {
 
 	l := len(b)
@@ -582,7 +572,7 @@ func ReadExactBytes(b []byte, dst []byte) ([]byte, error) {
 		return b, ErrShortBytes
 	}
 
-	var read uint32 // How many bytes are the actual data to read.
+	var read uint32 // The number of bytes of the data to read.
 	var skip int    // The length of the prefix indicating the length of data.
 
 	switch lead := b[0]; lead {
