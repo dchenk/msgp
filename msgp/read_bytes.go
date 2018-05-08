@@ -131,45 +131,31 @@ func (r *Raw) MarshalJSON() ([]byte, error) {
 }
 
 // ReadMapHeaderBytes reads a map header size from b and returns the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a map)
-func ReadMapHeaderBytes(b []byte) (sz uint32, o []byte, err error) {
+// Possible errors are ErrShortBytes and TypeError.
+func ReadMapHeaderBytes(b []byte) (uint32, []byte, error) {
 	l := len(b)
 	if l < 1 {
-		err = ErrShortBytes
-		return
+		return 0, b, ErrShortBytes
 	}
 
 	lead := b[0]
 	if isfixmap(lead) {
-		sz = uint32(rfixmap(lead))
-		o = b[1:]
-		return
+		return uint32(rfixmap(lead)), b[1:], nil
 	}
 
 	switch lead {
 	case mmap16:
 		if l < 3 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		sz = uint32(big.Uint16(b[1:]))
-		o = b[3:]
-		return
-
+		return uint32(big.Uint16(b[1:])), b[3:], nil
 	case mmap32:
 		if l < 5 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		sz = big.Uint32(b[1:])
-		o = b[5:]
-		return
-
+		return big.Uint32(b[1:]), b[5:], nil
 	default:
-		err = badPrefix(MapType, lead)
-		return
+		return 0, b, badPrefix(MapType, lead)
 	}
 }
 
