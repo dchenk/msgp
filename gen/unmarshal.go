@@ -19,15 +19,6 @@ type unmarshalGen struct {
 
 func (u *unmarshalGen) Method() Method { return Unmarshal }
 
-func (u *unmarshalGen) needsField() {
-	if u.hasField {
-		return
-	}
-	u.p.declare("field", "[]byte")
-	u.p.blankAssign("field")
-	u.hasField = true
-}
-
 func (u *unmarshalGen) Execute(p Elem) error {
 
 	u.hasField = false
@@ -69,7 +60,7 @@ func (u *unmarshalGen) gStruct(s *Struct) {
 	if s.AsTuple {
 		u.tuple(s)
 	} else {
-		u.mapstruct(s)
+		u.mapStruct(s)
 	}
 	return
 }
@@ -87,15 +78,24 @@ func (u *unmarshalGen) tuple(s *Struct) {
 	}
 }
 
-func (u *unmarshalGen) mapstruct(s *Struct) {
+func (u *unmarshalGen) mapStruct(s *Struct) {
 
-	u.needsField()
+	if !u.hasField {
+		u.p.declare("field", "[]byte")
+		u.hasField = true
+	}
+
+	// Declare the variable that will contain the map length.
 	sz := randIdent()
 	u.p.declare(sz, u32)
+
+	// Assign to the sz variable the length of the map, and get remaining bytes
+	// in a variable named "bts".
 	u.assignAndCheck(sz, mapHeader)
 
 	u.p.printf("\nfor %s > 0 {", sz)
-	u.p.printf("\n%s--; field, bts, err = msgp.ReadMapKeyZC(bts)", sz)
+	u.p.printf("\n%s--", sz)
+	u.p.print("\nfield, bts, err = msgp.ReadMapKeyZC(bts)")
 	u.p.print(errCheck)
 	u.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
@@ -107,7 +107,8 @@ func (u *unmarshalGen) mapstruct(s *Struct) {
 	}
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
 	u.p.print(errCheck)
-	u.p.print("\n}\n}") // close switch and for loop
+
+	u.p.print("\n}\n}") // Close switch block and for loop
 
 }
 

@@ -111,6 +111,17 @@ type Things struct {
 	Oext  msgp.RawExtension                 `msgp:"oext,extension"` // test extension reference
 }
 
+// The NoFields type gets methods generated, but it does not have any fields
+// that can get encoded/decoded with MessagePack.
+//
+// This tests whether a "field" variable declaration is made in unmarshal or
+// decode methods for a struct with no encodable/decodable fields. If an unused
+// "field" variable is declared, the code will not compile.
+type NoFields struct {
+	Func  func(string) error
+	stuff int
+}
+
 // Test the shim directive:
 
 //msgp:shim SpecialID as:[]byte using:toBytes/fromBytes

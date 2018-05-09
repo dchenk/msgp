@@ -193,6 +193,7 @@ func (p *passes) applyAll(e Elem) Elem {
 	return e
 }
 
+// A traversal is unmarshal methods, marshal methods, decode methods, etc.
 type traversal interface {
 	gMap(*Map)
 	gSlice(*Slice)
@@ -278,7 +279,7 @@ type printer struct {
 	err error
 }
 
-// writes "var {{name}} {{typ}}"
+// declare writes on a new line "var {{name}} {{typ}}"
 func (p *printer) declare(name, typ string) {
 	p.printf("\nvar %s %s", name, typ)
 }
@@ -315,7 +316,7 @@ func (p *printer) mapAssign(m *Map) {
 	}
 }
 
-// clear map keys
+// clearMap clears the named map's values.
 func (p *printer) clearMap(name string) {
 	p.printf("\nfor key := range %[1]s { delete(%[1]s, key) }", name)
 }
