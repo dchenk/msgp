@@ -19,15 +19,6 @@ type decodeGen struct {
 
 func (d *decodeGen) Method() Method { return Decode }
 
-func (d *decodeGen) needsField() {
-	if d.hasField {
-		return
-	}
-	d.p.declare("field", "[]byte")
-	d.p.blankAssign("field")
-	d.hasField = true
-}
-
 func (d *decodeGen) Execute(p Elem) error {
 	p = d.applyAll(p)
 	if p == nil {
@@ -63,7 +54,7 @@ func (d *decodeGen) gStruct(s *Struct) {
 	return
 }
 
-func (d *decodeGen) assignAndCheck(name string, typ string) {
+func (d *decodeGen) assignAndCheck(name, typ string) {
 	if !d.p.ok() {
 		return
 	}
@@ -87,12 +78,21 @@ func (d *decodeGen) structAsTuple(s *Struct) {
 }
 
 func (d *decodeGen) structAsMap(s *Struct) {
-	d.needsField()
+
+	if !d.hasField {
+		d.p.declare("field", "[]byte")
+		d.hasField = true
+	}
+
+	// Declare the variable that will contain the map length.
 	sz := randIdent()
 	d.p.declare(sz, u32)
+
+	// Assign to the sz variable the length of the map.
 	d.assignAndCheck(sz, mapHeader)
 
-	d.p.printf("\nfor %s > 0 {\n%s--", sz, sz)
+	d.p.printf("\nfor %s > 0 {", sz)
+	d.p.printf("\n%s--", sz)
 	d.assignAndCheck("field", mapKey)
 	d.p.print("\nswitch string(field) {")
 	for i := range s.Fields {
@@ -104,8 +104,10 @@ func (d *decodeGen) structAsMap(s *Struct) {
 	}
 	d.p.print("\ndefault:\nerr = dc.Skip()")
 	d.p.print(errCheck)
-	d.p.closeBlock() // close switch
+
+	d.p.closeBlock() // close switch block
 	d.p.closeBlock() // close for loop
+
 }
 
 func (d *decodeGen) gBase(b *BaseElem) {

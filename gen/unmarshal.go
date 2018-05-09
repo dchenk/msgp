@@ -60,7 +60,7 @@ func (u *unmarshalGen) gStruct(s *Struct) {
 	if s.AsTuple {
 		u.tuple(s)
 	} else {
-		u.mapStruct(s)
+		u.structAsMap(s)
 	}
 	return
 }
@@ -78,7 +78,7 @@ func (u *unmarshalGen) tuple(s *Struct) {
 	}
 }
 
-func (u *unmarshalGen) mapStruct(s *Struct) {
+func (u *unmarshalGen) structAsMap(s *Struct) {
 
 	if !u.hasField {
 		u.p.declare("field", "[]byte")
@@ -108,7 +108,8 @@ func (u *unmarshalGen) mapStruct(s *Struct) {
 	u.p.print("\ndefault:\nbts, err = msgp.Skip(bts)")
 	u.p.print(errCheck)
 
-	u.p.print("\n}\n}") // Close switch block and for loop
+	u.p.closeBlock() // close switch block
+	u.p.closeBlock() // close for loop
 
 }
 
