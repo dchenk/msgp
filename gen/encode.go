@@ -32,7 +32,7 @@ func (e *encodeGen) writeAndCheck(typ string, argfmt string, arg interface{}) {
 
 func (e *encodeGen) fuseHook() {
 	if len(e.fuse) > 0 {
-		e.appendraw(e.fuse)
+		e.appendRaw(e.fuse)
 		e.fuse = e.fuse[:0]
 	}
 }
@@ -72,14 +72,13 @@ func (e *encodeGen) gStruct(s *Struct) {
 		return
 	}
 	if s.AsTuple {
-		e.tuple(s)
+		e.structAsTuple(s)
 	} else {
-		e.structmap(s)
+		e.structAsMap(s)
 	}
-	return
 }
 
-func (e *encodeGen) tuple(s *Struct) {
+func (e *encodeGen) structAsTuple(s *Struct) {
 	nfields := len(s.Fields)
 	data := msgp.AppendArrayHeader(nil, uint32(nfields))
 	e.p.printf("\n// array header, size %d", nfields)
@@ -95,10 +94,10 @@ func (e *encodeGen) tuple(s *Struct) {
 	}
 }
 
-func (e *encodeGen) appendraw(bts []byte) {
+func (e *encodeGen) appendRaw(bts []byte) {
 	e.p.print("\nerr = en.Append(")
 	for i, b := range bts {
-		if i != 0 {
+		if i > 0 {
 			e.p.print(", ")
 		}
 		e.p.printf("0x%x", b)
@@ -106,7 +105,7 @@ func (e *encodeGen) appendraw(bts []byte) {
 	e.p.print(")\nif err != nil { return }")
 }
 
-func (e *encodeGen) structmap(s *Struct) {
+func (e *encodeGen) structAsMap(s *Struct) {
 	nfields := len(s.Fields)
 	data := msgp.AppendMapHeader(nil, uint32(nfields))
 	e.p.printf("\n// map header, size %d", nfields)

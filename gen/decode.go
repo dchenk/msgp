@@ -51,7 +51,6 @@ func (d *decodeGen) gStruct(s *Struct) {
 	} else {
 		d.structAsMap(s)
 	}
-	return
 }
 
 func (d *decodeGen) assignAndCheck(name, typ string) {
@@ -63,12 +62,10 @@ func (d *decodeGen) assignAndCheck(name, typ string) {
 }
 
 func (d *decodeGen) structAsTuple(s *Struct) {
-	nfields := len(s.Fields)
-
 	sz := randIdent()
 	d.p.declare(sz, u32)
 	d.assignAndCheck(sz, arrayHeader)
-	d.p.arrayCheck(strconv.Itoa(nfields), sz)
+	d.p.arrayCheck(strconv.Itoa(len(s.Fields)), sz)
 	for i := range s.Fields {
 		if !d.p.ok() {
 			return

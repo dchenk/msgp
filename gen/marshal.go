@@ -80,7 +80,6 @@ func (m *marshalGen) gStruct(s *Struct) {
 	} else {
 		m.mapstruct(s)
 	}
-	return
 }
 
 func (m *marshalGen) tuple(s *Struct) {

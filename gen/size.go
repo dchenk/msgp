@@ -44,8 +44,7 @@ func builtinSize(typ string) string {
 	return "msgp." + typ + "Size"
 }
 
-// this lets us chain together addition
-// operations where possible
+// this lets us chain together addition operations where possible
 func (s *sizeGen) addConstant(sz string) {
 	if !s.p.ok() {
 		return
@@ -187,8 +186,8 @@ func (s *sizeGen) gBase(b *BaseElem) {
 		vname := randIdent()
 		s.p.declare(vname, b.BaseType())
 
-		// Ensure we don't get "unused variable" warnings from outer slice iterations.
-		s.p.blankAssign(b.Varname())
+		// Ensure we don't get "unused variable" errors from outer slice iterations.
+		s.p.print("\n_ = " + b.Varname())
 
 		s.p.printf("\ns += %s", baseSizeExpr(b.Value, vname, b.BaseName()))
 		s.state = expr
