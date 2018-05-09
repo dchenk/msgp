@@ -29,7 +29,7 @@ func (m *marshalGen) Execute(p Elem) error {
 	if !m.p.ok() {
 		return m.p.err
 	}
-	p = m.applyall(p)
+	p = m.applyAll(p)
 	if p == nil {
 		return nil
 	}
@@ -188,7 +188,7 @@ func (m *marshalGen) gBase(b *BaseElem) {
 			vname = b.toBaseConvert()
 		} else {
 			vname = randIdent()
-			m.p.printf("\nvar %s %s", vname, b.BaseType())
+			m.p.declare(vname, b.BaseType())
 			m.p.printf("\n%s, err = %s", vname, b.toBaseConvert())
 			m.p.printf(errCheck)
 		}

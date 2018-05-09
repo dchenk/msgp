@@ -23,13 +23,13 @@ func (d *decodeGen) needsField() {
 	if d.hasField {
 		return
 	}
-	d.p.print("\nvar field []byte")
+	d.p.declare("field", "[]byte")
 	d.p.blankAssign("field")
 	d.hasField = true
 }
 
 func (d *decodeGen) Execute(p Elem) error {
-	p = d.applyall(p)
+	p = d.applyAll(p)
 	if p == nil {
 		return nil
 	}

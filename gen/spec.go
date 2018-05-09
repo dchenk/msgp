@@ -27,7 +27,7 @@ func (m Method) isSet(f Method) bool { return m&f == f }
 // String implements fmt.Stringer
 func (m Method) String() string {
 	switch m {
-	case 0, invalidmeth:
+	case 0, invalidMeth:
 		return "<invalid method>"
 	case Decode:
 		return "decode"
@@ -68,7 +68,7 @@ const (
 	Unmarshal                                            // Unmarshal using msgp.Unmarshaler
 	Size                                                 // Size using msgp.Sizer
 	Test                                                 // Test functions should be generated
-	invalidmeth                                          // this isn't a method
+	invalidMeth                                          // this isn't a method
 	encodetest  = Encode | Decode | Test                 // tests for Encoder and Decoder
 	marshaltest = Marshal | Unmarshal | Test             // tests for Marshaler and Unmarshaler
 )
@@ -183,7 +183,7 @@ func (p *passes) Add(t TransformPass) {
 	*p = append(*p, t)
 }
 
-func (p *passes) applyall(e Elem) Elem {
+func (p *passes) applyAll(e Elem) Elem {
 	for _, t := range *p {
 		e = t(e) // Execute the TransformPass func.
 		if e == nil {
@@ -291,18 +291,16 @@ func (p *printer) blankAssign(varName string) {
 }
 
 // resizeMap does:
-//
-// if m != nil && size > 0 {
-//     m = make(type, size)
-// } else if len(m) > 0 {
-//     for key := range m { delete(m, key) }
-// }
-//
+//  if m == nil && size > 0 {
+//      m = make(type, size)
+//  } else if len(m) > 0 {
+//      for key := range m { delete(m, key) }
+//  }
 func (p *printer) resizeMap(size string, m *Map) {
-	vn := m.Varname()
 	if !p.ok() {
 		return
 	}
+	vn := m.Varname()
 	p.printf("\nif %s == nil && %s > 0 {", vn, size)
 	p.printf("\n%s = make(%s, %s)", vn, m.TypeName(), size)
 	p.printf("\n} else if len(%s) > 0 {", vn)

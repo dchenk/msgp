@@ -23,7 +23,7 @@ func (u *unmarshalGen) needsField() {
 	if u.hasField {
 		return
 	}
-	u.p.print("\nvar field []byte")
+	u.p.declare("field", "[]byte")
 	u.p.blankAssign("field")
 	u.hasField = true
 }
@@ -34,7 +34,7 @@ func (u *unmarshalGen) Execute(p Elem) error {
 	if !u.p.ok() {
 		return u.p.err
 	}
-	p = u.applyall(p)
+	p = u.applyAll(p)
 	if p == nil {
 		return nil
 	}
@@ -192,12 +192,14 @@ func (u *unmarshalGen) gMap(m *Map) {
 	u.p.declare(sz, u32)
 	u.assignAndCheck(sz, mapHeader)
 
-	// allocate or clear map
+	// Allocate or clear map
 	u.p.resizeMap(sz, m)
 
-	// loop and get key,value
+	// Loop and get key, value
 	u.p.printf("\nfor %s > 0 {", sz)
-	u.p.printf("\nvar %s string; var %s %s; %s--", m.KeyIndx, m.ValIndx, m.Value.TypeName(), sz)
+	u.p.declare(m.KeyIndx, "string")
+	u.p.declare(m.ValIndx, m.Value.TypeName())
+	u.p.printf("\n%s--", sz)
 	u.assignAndCheck(m.KeyIndx, stringTyp)
 	next(u, m.Value)
 	u.p.mapAssign(m)
