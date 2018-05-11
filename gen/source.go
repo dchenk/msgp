@@ -55,7 +55,7 @@ func newSource(srcPath string, unexported bool) (*source, error) {
 		}
 		for _, fl := range pkg.Files {
 			pushState(fl.Name.Name)
-			s.directives = append(s.directives, yieldComments(fl.Comments)...)
+			s.directives = append(s.directives, getComments(fl.Comments)...)
 			if !unexported {
 				ast.FileExports(fl)
 			}
@@ -68,7 +68,7 @@ func newSource(srcPath string, unexported bool) (*source, error) {
 			return nil, err
 		}
 		s.pkg = f.Name.Name
-		s.directives = yieldComments(f.Comments)
+		s.directives = getComments(f.Comments)
 		if !unexported {
 			ast.FileExports(f)
 		}
@@ -164,7 +164,7 @@ func (s *source) resolve(ls linkset) {
 		}
 	}
 
-	// What's left can't be resolved.
+	// Whatever is left can't be resolved.
 	for name, elem := range ls {
 		warnf("couldn't resolve type %s (%s)\n", name, elem.TypeName())
 	}
@@ -175,22 +175,21 @@ func (s *source) resolve(ls linkset) {
 func (s *source) process() {
 
 	deferred := make(linkset)
-parse:
+
 	for name, def := range s.specs {
 		pushState(name)
 		el := s.parseExpr(def)
 		if el == nil {
 			warnln("failed to parse")
 			popState()
-			continue parse
+			continue
 		}
-		// push unresolved identities into
-		// the graph of links and resolve after
-		// we've handled every possible named type.
+		// Push unresolved identities into the graph of links and
+		// resolve after we've handled every possible named type.
 		if be, ok := el.(*BaseElem); ok && be.Value == IDENT {
 			deferred[name] = be
 			popState()
-			continue parse
+			continue
 		}
 		el.Alias(name)
 		s.identities[name] = el
@@ -223,7 +222,6 @@ func strToMethod(s string) Method {
 
 // applyDirs applies directives of the form: //msgp:encode ignore {{TypeName}}
 func (s *source) applyDirs(p generatorSet) {
-loop:
 	for _, d := range s.directives {
 		chunks := strings.Split(d, " ")
 		if len(chunks) > 1 {
@@ -235,7 +233,7 @@ loop:
 			m := strToMethod(chunks[0]) // m is the directive's Method
 			if m == 0 {
 				warnf("unknown pass name: %q\n", chunks[0])
-				continue loop
+				continue
 			}
 			if fn, ok := passDirectives[chunks[1]]; ok {
 				pushState(chunks[1])
@@ -253,8 +251,8 @@ loop:
 	}
 }
 
-// getTypeSpecs extracts all of the *ast.TypeSpecs in the file
-// into s.identities but does not set the actual element.
+// getTypeSpecs extracts all of the *ast.TypeSpecs in the file into s.identities but
+// does not set the actual element.
 func (s *source) getTypeSpecs(f *ast.File) {
 
 	// Collect all imports.

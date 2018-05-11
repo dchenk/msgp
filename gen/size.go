@@ -71,11 +71,9 @@ func (s *sizeGen) Execute(p Elem) error {
 	if !s.p.ok() {
 		return s.p.err
 	}
+
 	p = s.applyAll(p)
-	if p == nil {
-		return nil
-	}
-	if !isPrintable(p) {
+	if p == nil || !isPrintable(p) {
 		return nil
 	}
 

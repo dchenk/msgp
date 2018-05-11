@@ -39,8 +39,8 @@ func passIgnore(m Method, typeNamePatterns []string, gs generatorSet) error {
 	return nil
 }
 
-// yieldComments finds all comment lines that begin with //msgp:
-func yieldComments(c []*ast.CommentGroup) (comments []string) {
+// getComments finds all comment lines that begin with //msgp:
+func getComments(c []*ast.CommentGroup) (comments []string) {
 	for _, cg := range c {
 		for _, line := range cg.List {
 			if strings.HasPrefix(line.Text, linePrefix) {
@@ -53,6 +53,7 @@ func yieldComments(c []*ast.CommentGroup) (comments []string) {
 
 // applyShim applies a shim of the form:
 // msgp:shim {Type} as:{Newtype} using:{toFunc/fromFunc} mode:{Mode}
+// though the mode argument is optional.
 func applyShim(text []string, s *source) error {
 	if len(text) < 4 || len(text) > 5 {
 		return fmt.Errorf("shim directive should have 3 or 4 arguments; found %d", len(text)-1)
@@ -66,9 +67,9 @@ func applyShim(text []string, s *source) error {
 	}
 	be.Alias(name)
 
-	usestr := strings.TrimPrefix(strings.TrimSpace(text[3]), "using:") // parse using::{method/method}
+	using := strings.TrimPrefix(strings.TrimSpace(text[3]), "using:") // parse using::{method/method}
 
-	methods := strings.Split(usestr, "/")
+	methods := strings.Split(using, "/")
 	if len(methods) != 2 {
 		return fmt.Errorf("expected 2 using::{} methods; found %d (%q)", len(methods), text[3])
 	}
@@ -77,14 +78,14 @@ func applyShim(text []string, s *source) error {
 	be.ShimFromBase = methods[1]
 
 	if len(text) == 5 {
-		modestr := strings.TrimPrefix(strings.TrimSpace(text[4]), "mode:") // parse mode::{mode}
-		switch modestr {
+		mode := strings.TrimPrefix(strings.TrimSpace(text[4]), "mode:") // parse mode::{mode}
+		switch mode {
 		case "cast":
 			be.ShimMode = Cast
 		case "convert":
 			be.ShimMode = Convert
 		default:
-			return fmt.Errorf("invalid shim mode; found %s, expected 'cast' or 'convert", modestr)
+			return fmt.Errorf("invalid shim mode; found %s, expected 'cast' or 'convert", mode)
 		}
 	}
 
