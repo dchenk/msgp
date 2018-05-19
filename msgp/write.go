@@ -19,7 +19,7 @@ type Sizer interface {
 var btsType = reflect.TypeOf(([]byte)(nil))
 
 // Nowhere is an io.Writer to nowhere (used by generated tests).
-var Nowhere io.Writer = nwhere{}
+var Nowhere = nwhere{}
 
 type nwhere struct{}
 
