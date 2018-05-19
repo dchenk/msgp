@@ -126,26 +126,26 @@ func AppendInt64(b []byte, i int64) []byte {
 	}
 }
 
-// AppendInt8 appends an int8 b.
+// AppendInt8 appends an int8 to b.
 func AppendInt8(b []byte, i int8) []byte {
 	if i >= 0 {
 		return append(b, wfixint(uint8(i)))
 	}
 	if i >= -32 {
-		return append(b, wnfixint(int8(i)))
+		return append(b, wnfixint(i))
 	}
 	o, n := ensure(b, 2)
 	putMint8(o[n:], i)
 	return o
 }
 
-// AppendInt16 appends an int16 b.
+// AppendInt16 appends an int16 to b.
 func AppendInt16(b []byte, i int16) []byte { return AppendInt64(b, int64(i)) }
 
-// AppendInt32 appends an int32 b.
+// AppendInt32 appends an int32 to b.
 func AppendInt32(b []byte, i int32) []byte { return AppendInt64(b, int64(i)) }
 
-// AppendUint64 appends a uint64 b.
+// AppendUint64 appends a uint64 to b.
 func AppendUint64(b []byte, u uint64) []byte {
 	switch {
 	case u <= math.MaxInt8:
@@ -169,51 +169,49 @@ func AppendUint64(b []byte, u uint64) []byte {
 	}
 }
 
-// AppendUint appends a uint b.
+// AppendUint appends a uint to b.
 func AppendUint(b []byte, u uint) []byte { return AppendUint64(b, uint64(u)) }
 
-// AppendUint8 appends a uint8 b.
+// AppendUint8 appends a uint8 to b.
 func AppendUint8(b []byte, u uint8) []byte {
 	if u <= math.MaxInt8 {
-		return append(b, wfixint(uint8(u)))
+		return append(b, wfixint(u))
 	}
 	o, n := ensure(b, 2)
 	putMuint8(o[n:], u)
 	return o
 }
 
-// AppendUint16 appends a uint16 b.
+// AppendUint16 appends a uint16 to b.
 func AppendUint16(b []byte, u uint16) []byte { return AppendUint64(b, uint64(u)) }
 
-// AppendUint32 appends a uint32 b.
+// AppendUint32 appends a uint32 to b.
 func AppendUint32(b []byte, u uint32) []byte { return AppendUint64(b, uint64(u)) }
 
-// AppendInt appends an int b.
+// AppendInt appends an int to b.
 func AppendInt(b []byte, i int) []byte { return AppendInt64(b, int64(i)) }
 
-// AppendByte does the same thing as AppendUint8
+// AppendByte does the same thing as AppendUint8.
 func AppendByte(b []byte, u byte) []byte { return AppendUint8(b, u) }
 
-// AppendBytes appends bytes b as MessagePack 'bin' data.
+// AppendBytes appends slice bts to b as MessagePack 'bin' data.
 func AppendBytes(b []byte, bts []byte) []byte {
 	sz := len(bts)
-	var o []byte
 	var n int
-	switch {
-	case sz <= math.MaxUint8:
-		o, n = ensure(b, 2+sz)
-		prefixu8(o[n:], mbin8, uint8(sz))
+	if sz <= math.MaxUint8 {
+		b, n = ensure(b, 2+sz)
+		prefixu8(b[n:], mbin8, uint8(sz))
 		n += 2
-	case sz <= math.MaxUint16:
-		o, n = ensure(b, 3+sz)
-		prefixu16(o[n:], mbin16, uint16(sz))
+	} else if sz <= math.MaxUint16 {
+		b, n = ensure(b, 3+sz)
+		prefixu16(b[n:], mbin16, uint16(sz))
 		n += 3
-	default:
-		o, n = ensure(b, 5+sz)
-		prefixu32(o[n:], mbin32, uint32(sz))
+	} else {
+		b, n = ensure(b, 5+sz)
+		prefixu32(b[n:], mbin32, uint32(sz))
 		n += 5
 	}
-	return o[:n+copy(o[n:], bts)]
+	return b[:n+copy(b[n:], bts)]
 }
 
 // AppendBool appends a bool b.
