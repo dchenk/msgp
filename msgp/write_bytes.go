@@ -53,18 +53,17 @@ func AppendMapHeader(b []byte, sz uint32) []byte {
 // AppendArrayHeader appends an array header with the given size to b. The size must
 // not be greater than math.MaxUint32.
 func AppendArrayHeader(b []byte, sz uint32) []byte {
-	switch {
-	case sz <= 15:
+	if sz <= 15 {
 		return append(b, wfixarray(uint8(sz)))
-	case sz <= math.MaxUint16:
+	}
+	if sz <= math.MaxUint16 {
 		o, n := ensure(b, 3)
 		prefixu16(o[n:], marray16, uint16(sz))
 		return o
-	default:
-		o, n := ensure(b, 5)
-		prefixu32(o[n:], marray32, sz)
-		return o
 	}
+	o, n := ensure(b, 5)
+	prefixu32(o[n:], marray32, sz)
+	return o
 }
 
 // AppendNil appends a MessagePack nil byte to b.
