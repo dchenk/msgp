@@ -221,30 +221,29 @@ func AppendBool(b []byte, t bool) []byte {
 	return append(b, mfalse)
 }
 
-// AppendString appends a string as a MessagePack 'str' b.
+// AppendString appends a string as a MessagePack 'str' to b.
 func AppendString(b []byte, s string) []byte {
 	sz := len(s)
 	var n int
-	var o []byte
 	switch {
 	case sz <= 31:
-		o, n = ensure(b, 1+sz)
-		o[n] = wfixstr(uint8(sz))
+		b, n = ensure(b, 1+sz)
+		b[n] = wfixstr(uint8(sz))
 		n++
 	case sz <= math.MaxUint8:
-		o, n = ensure(b, 2+sz)
-		prefixu8(o[n:], mstr8, uint8(sz))
+		b, n = ensure(b, 2+sz)
+		prefixu8(b[n:], mstr8, uint8(sz))
 		n += 2
 	case sz <= math.MaxUint16:
-		o, n = ensure(b, 3+sz)
-		prefixu16(o[n:], mstr16, uint16(sz))
+		b, n = ensure(b, 3+sz)
+		prefixu16(b[n:], mstr16, uint16(sz))
 		n += 3
 	default:
-		o, n = ensure(b, 5+sz)
-		prefixu32(o[n:], mstr32, uint32(sz))
+		b, n = ensure(b, 5+sz)
+		prefixu32(b[n:], mstr32, uint32(sz))
 		n += 5
 	}
-	return o[:n+copy(o[n:], s)]
+	return b[:n+copy(b[n:], s)]
 }
 
 // AppendComplex64 appends a complex64 to b as a MessagePack extension.
