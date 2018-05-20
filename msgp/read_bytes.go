@@ -384,9 +384,10 @@ func ReadIntBytes(b []byte) (int, []byte, error) {
 	return int(i), b, err
 }
 
-// ReadUint64Bytes tries to read a uint64 from b and return the value and the remaining bytes.
-// Possible errors include ErrShortBytes (too few bytes) and TypeError{} (not a uint).
-func ReadUint64Bytes(b []byte) (u uint64, o []byte, err error) {
+// ReadUint64Bytes reads a uint64 from b and returns the value and any remaining bytes.
+// Possible errors include ErrShortBytes and TypeError.
+func ReadUint64Bytes(b []byte) (uint64, []byte, error) {
+
 	l := len(b)
 	if l < 1 {
 		return 0, nil, ErrShortBytes
@@ -394,52 +395,38 @@ func ReadUint64Bytes(b []byte) (u uint64, o []byte, err error) {
 
 	lead := b[0]
 	if isfixint(lead) {
-		u = uint64(rfixint(lead))
-		o = b[1:]
-		return
+		return uint64(rfixint(lead)), b[1:], nil
 	}
 
 	switch lead {
 	case muint8:
 		if l < 2 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		u = uint64(getMuint8(b))
-		o = b[2:]
-		return
+		return uint64(getMuint8(b)), b[2:], nil
 
 	case muint16:
 		if l < 3 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		u = uint64(getMuint16(b))
-		o = b[3:]
-		return
+		return uint64(getMuint16(b)), b[3:], nil
 
 	case muint32:
 		if l < 5 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		u = uint64(getMuint32(b))
-		o = b[5:]
-		return
+		return uint64(getMuint32(b)), b[5:], nil
 
 	case muint64:
 		if l < 9 {
-			err = ErrShortBytes
-			return
+			return 0, b, ErrShortBytes
 		}
-		u = getMuint64(b)
-		o = b[9:]
-		return
+		return getMuint64(b), b[9:], nil
 
 	default:
-		err = badPrefix(UintType, lead)
-		return
+		return 0, b, badPrefix(UintType, lead)
 	}
+
 }
 
 // ReadUint32Bytes tries to read a uint32 from b and return the value and the remaining bytes.
