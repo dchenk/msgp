@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"strconv"
-	"time"
 )
 
 // UnmarshalAsJSON takes raw MessagePack data and writes it as JSON to w.
