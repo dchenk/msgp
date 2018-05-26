@@ -192,9 +192,9 @@ func AppendInt(b []byte, i int) []byte { return AppendInt64(b, int64(i)) }
 // AppendByte does the same thing as AppendUint8.
 func AppendByte(b []byte, u byte) []byte { return AppendUint8(b, u) }
 
-// AppendBytes appends slice bts to b as MessagePack 'bin' data.
-func AppendBytes(b []byte, bts []byte) []byte {
-	sz := len(bts)
+// AppendBytes appends the data slice to b as MessagePack 'bin' data.
+func AppendBytes(b []byte, data []byte) []byte {
+	sz := len(data)
 	var n int
 	if sz <= math.MaxUint8 {
 		b, n = ensure(b, 2+sz)
@@ -209,10 +209,10 @@ func AppendBytes(b []byte, bts []byte) []byte {
 		prefixu32(b[n:], mbin32, uint32(sz))
 		n += 5
 	}
-	return b[:n+copy(b[n:], bts)]
+	return b[:n+copy(b[n:], data)]
 }
 
-// AppendBool appends a bool b.
+// AppendBool appends a bool to b.
 func AppendBool(b []byte, t bool) []byte {
 	if t {
 		return append(b, mtrue)
@@ -276,8 +276,8 @@ func AppendTime(b []byte, t time.Time) []byte {
 	return o
 }
 
-// AppendMapStrStr appends a map[string]string to b as a MessagePack map
-// with 'str'-type keys and values.
+// AppendMapStrStr appends to b a map with 'str'-type keys and values as
+// a MessagePack map.
 func AppendMapStrStr(b []byte, m map[string]string) []byte {
 	sz := uint32(len(m))
 	b = AppendMapHeader(b, sz)
@@ -288,8 +288,7 @@ func AppendMapStrStr(b []byte, m map[string]string) []byte {
 	return b
 }
 
-// AppendMapStrIntf appends a map[string]interface{} to b as a MessagePack map
-// with 'str'-type keys.
+// AppendMapStrIntf appends a map[string]interface{} to b as a MessagePack map.
 func AppendMapStrIntf(b []byte, m map[string]interface{}) ([]byte, error) {
 	sz := uint32(len(m))
 	b = AppendMapHeader(b, sz)
