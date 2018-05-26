@@ -1,7 +1,8 @@
 package tests
 
-// Because many MessagePack implementations by default encode all non-negative integers, we should
-// be able to decode unsigned integers into Go's signed integers when the unsigned does not overflow.
+// Because many MessagePack implementations by default encode all non-negative integers as unsigned,
+// we should be able to decode unsigned integers into Go's signed integers when the integer does
+// not overflow.
 
 //go:generate msgp -tests=false -io=false
 //msgp:marshal ignore MixedIntsDec Int32ForUint16Dec
@@ -16,7 +17,7 @@ type MixedIntsEnc struct {
 	D uint64
 }
 
-// MixedIntsDec values should be decodable from the encoded MixedIntsEnc type.
+// MixedIntsDec values should be decodable from an encoded MixedIntsEnc.
 type MixedIntsDec struct {
 	A int64 // Keeping same as above (like in real world).
 	B int8
@@ -28,5 +29,5 @@ type MixedIntsDec struct {
 // are negative).
 type Uint16Enc uint16
 
-// Int32ForUint16Dec values should be decodable from the encoded Uint16Enc type.
+// Int32ForUint16Dec values should be decodable from an encoded Uint16Enc.
 type Int32ForUint16Dec int32
