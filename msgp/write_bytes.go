@@ -189,7 +189,7 @@ func AppendUint32(b []byte, u uint32) []byte { return AppendUint64(b, uint64(u))
 // AppendInt appends an int to b.
 func AppendInt(b []byte, i int) []byte { return AppendInt64(b, int64(i)) }
 
-// AppendByte does the same thing as AppendUint8.
+// AppendByte appends a byte to b as a uint8 using AppendUint8.
 func AppendByte(b []byte, u byte) []byte { return AppendUint8(b, u) }
 
 // AppendBytes appends the data slice to b as MessagePack 'bin' data.
@@ -265,7 +265,7 @@ func AppendComplex128(b []byte, c complex128) []byte {
 	return o
 }
 
-// AppendTime appends a time.Time to the slice as a MessagePack extension
+// AppendTime appends a time.Time to b as a MessagePack extension.
 func AppendTime(b []byte, t time.Time) []byte {
 	o, n := ensure(b, TimeSize)
 	t = t.UTC()
@@ -279,8 +279,7 @@ func AppendTime(b []byte, t time.Time) []byte {
 // AppendMapStrStr appends to b a map with 'str'-type keys and values as
 // a MessagePack map.
 func AppendMapStrStr(b []byte, m map[string]string) []byte {
-	sz := uint32(len(m))
-	b = AppendMapHeader(b, sz)
+	b = AppendMapHeader(b, uint32(len(m)))
 	for key, val := range m {
 		b = AppendString(b, key)
 		b = AppendString(b, val)
@@ -290,8 +289,7 @@ func AppendMapStrStr(b []byte, m map[string]string) []byte {
 
 // AppendMapStrIntf appends a map[string]interface{} to b as a MessagePack map.
 func AppendMapStrIntf(b []byte, m map[string]interface{}) ([]byte, error) {
-	sz := uint32(len(m))
-	b = AppendMapHeader(b, sz)
+	b = AppendMapHeader(b, uint32(len(m)))
 	var err error
 	for key, val := range m {
 		b = AppendString(b, key)
@@ -303,7 +301,7 @@ func AppendMapStrIntf(b []byte, m map[string]interface{}) ([]byte, error) {
 	return b, nil
 }
 
-// AppendIntf appends the concrete type of i to b. The type of i must be
+// AppendIntf appends to b the value of i with its concrete type. The type of i must be
 // one of the following:
 //  - bool, float, string, []byte, int, uint, complex, time.Time, or nil
 //  - map[string]interface{} or map[string]string
