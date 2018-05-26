@@ -159,8 +159,8 @@ func ReadMapHeaderBytes(b []byte) (uint32, []byte, error) {
 	}
 }
 
-// ReadMapKeyZC reads a 'str' or 'bin' object (a key to a map element) from b and returns the value and
-// any remaining bytes. Possible errors are ErrShortBytes and TypeError{}.
+// ReadMapKeyZC reads a 'str' or 'bin' object (a key to a map element) from b and returns the value
+// and any remaining bytes. Possible errors are ErrShortBytes and TypeError.
 func ReadMapKeyZC(b []byte) ([]byte, []byte, error) {
 	o, b, err := ReadStringZC(b)
 	if err != nil {
@@ -171,8 +171,8 @@ func ReadMapKeyZC(b []byte) ([]byte, []byte, error) {
 	return o, b, err
 }
 
-// ReadArrayHeaderBytes reads the array header size off of b and returns the array length
-// and any remaining bytes. Possible errors are ErrShortBytes and TypeError.
+// ReadArrayHeaderBytes reads the array header size off of b and returns the array length and
+// any remaining bytes. Possible errors are ErrShortBytes, TypeError, and InvalidPrefixError.
 func ReadArrayHeaderBytes(b []byte) (uint32, []byte, error) {
 	if len(b) < 1 {
 		return 0, nil, ErrShortBytes
@@ -197,11 +197,8 @@ func ReadArrayHeaderBytes(b []byte) (uint32, []byte, error) {
 	}
 }
 
-// ReadNilBytes tries to read a "nil" byte off of b and return the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a 'nil')
-// - InvalidPrefixError
+// ReadNilBytes reads a "nil" byte off of b and returns any remaining bytes.
+// Possible errors are ErrShortBytes, TypeError, and InvalidPrefixError.
 func ReadNilBytes(b []byte) ([]byte, error) {
 	if len(b) < 1 {
 		return nil, ErrShortBytes
@@ -626,11 +623,8 @@ func ReadStringZC(b []byte) ([]byte, []byte, error) {
 
 }
 
-// ReadStringBytes reads a 'str' object from b and returns its value and the remaining bytes in b.
-// Possible errors:
-// - ErrShortBytes (b not long enough)
-// - TypeError{} (not 'str' type)
-// - InvalidPrefixError
+// ReadStringBytes reads a 'str' object from b and returns its value and any remaining bytes in b.
+// Possible errors are ErrShortBytes, TypeError, and InvalidPrefixError.
 func ReadStringBytes(b []byte) (string, []byte, error) {
 	v, o, err := ReadStringZC(b)
 	return string(v), o, err
@@ -646,11 +640,7 @@ func ReadStringAsBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
 }
 
 // ReadComplex128Bytes reads a complex128 extension object from 'b' and returns any remaining bytes.
-// Possible errors:
-// - ErrShortBytes (not enough bytes in 'b')
-// - TypeError{} (object not a complex128)
-// - InvalidPrefixError
-// - ExtensionTypeError{} (object an extension of the correct size, but not a complex128)
+// Possible errors are ErrShortBytes, TypeError, InvalidPrefixError, and ExtensionTypeError.
 func ReadComplex128Bytes(b []byte) (c complex128, o []byte, err error) {
 	if len(b) < 18 {
 		err = ErrShortBytes

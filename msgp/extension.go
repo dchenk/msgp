@@ -43,17 +43,17 @@ func RegisterExtension(typ int8, f func() Extension) {
 }
 
 // ExtensionTypeError is an error type returned when there is a mis-match between an extension
-// type and the type encoded on the wire
+// type and the type encoded on the wire.
 type ExtensionTypeError struct {
 	Got, Want int8
 }
 
-// Error implements the error interface
+// Error implements the error interface.
 func (e ExtensionTypeError) Error() string {
 	return fmt.Sprintf("msgp: error decoding extension: wanted type %d; got type %d", e.Want, e.Got)
 }
 
-// Resumable returns true for ExtensionTypeErrors.
+// Resumable returns true for ExtensionTypeError errors.
 func (e ExtensionTypeError) Resumable() bool { return true }
 
 func errExt(got int8, wanted int8) error {
@@ -63,7 +63,7 @@ func errExt(got int8, wanted int8) error {
 // Extension is the interface implemented by types that want to define their own binary encoding.
 type Extension interface {
 	// ExtensionType returns an int8 that identifies the extension's concrete type.
-	// (Types <0 are reserved by the MessagePack specification.)
+	// (Types below zero are reserved by the MessagePack specification.)
 	ExtensionType() int8
 
 	// Len returns the length of the data to be encoded.
@@ -73,6 +73,7 @@ type Extension interface {
 	// slice has length Len().
 	MarshalBinaryTo([]byte) error
 
+	// UnmarshalBinary unmarshals the slice into the object.
 	UnmarshalBinary([]byte) error
 }
 
