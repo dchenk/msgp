@@ -212,42 +212,24 @@ func ReadNilBytes(b []byte) ([]byte, error) {
 	return b[1:], nil
 }
 
-// ReadFloat64Bytes tries to read a float64 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a float64)
-func ReadFloat64Bytes(b []byte) (f float64, o []byte, err error) {
-	if len(b) < 9 {
-		if len(b) >= 5 && b[0] == mfloat32 {
-			var tf float32
-			tf, o, err = ReadFloat32Bytes(b)
-			f = float64(tf)
-			return
-		}
-		err = ErrShortBytes
-		return
+// ReadFloat64Bytes reads a float64 from b and returns the value and any remaining bytes.
+// Possible errors are ErrShortBytes and TypeError.
+func ReadFloat64Bytes(b []byte) (float64, []byte, error) {
+	if len(b) < 5 { // 5 because we may read a float32
+		return 0, b, ErrShortBytes
 	}
-
 	if b[0] != mfloat64 {
 		if b[0] == mfloat32 {
-			var tf float32
-			tf, o, err = ReadFloat32Bytes(b)
-			f = float64(tf)
-			return
+			f32, b, err := ReadFloat32Bytes(b)
+			return float64(f32), b, err
 		}
-		err = badPrefix(Float64Type, b[0])
-		return
+		return 0, b, badPrefix(Float64Type, b[0])
 	}
-
-	f = math.Float64frombits(getMuint64(b))
-	o = b[9:]
-	return
+	return math.Float64frombits(getMuint64(b)), b[9:], nil
 }
 
-// ReadFloat32Bytes tries to read a float64 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a float32)
+// ReadFloat32Bytes reads a float32 from b and returns the value and any remaining bytes.
+// Possible errors are ErrShortBytes and TypeError.
 func ReadFloat32Bytes(b []byte) (float32, []byte, error) {
 	if len(b) < 5 {
 		return 0, b, ErrShortBytes
@@ -255,8 +237,7 @@ func ReadFloat32Bytes(b []byte) (float32, []byte, error) {
 	if b[0] != mfloat32 {
 		return 0, b, TypeError{Method: Float32Type, Encoded: getType(b[0])}
 	}
-	f := math.Float32frombits(getMuint32(b))
-	return f, b[5:], nil
+	return math.Float32frombits(getMuint32(b)), b[5:], nil
 }
 
 // ReadBoolBytes tries to read a float64 from b and return the value and the remaining bytes.
