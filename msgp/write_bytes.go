@@ -27,42 +27,41 @@ func Require(old []byte, extra int) []byte {
 	return n
 }
 
-// ensure returns a slice (with the contents of b) having at least sz extra bytes between
+// ensure returns a slice (with the contents of b) having at least size extra bytes between
 // its length and capacity. The int returned indicates the index at which to write.
-func ensure(b []byte, sz int) ([]byte, int) {
-	b = Require(b, sz)
+func ensure(b []byte, size int) ([]byte, int) {
+	b = Require(b, size)
 	l := len(b)
-	return b[:l+sz], l
+	return b[:l+size], l
 }
 
-// AppendMapHeader appends a map header with the given size to b.
-func AppendMapHeader(b []byte, sz uint32) []byte {
+// AppendMapHeader appends a map header of the given size (number of elements) to b.
+func AppendMapHeader(b []byte, size uint32) []byte {
 	if sz <= 15 {
-		return append(b, wfixmap(uint8(sz)))
+		return append(b, wfixmap(uint8(size)))
 	}
 	if sz <= math.MaxUint16 {
 		o, n := ensure(b, 3)
-		prefixu16(o[n:], mmap16, uint16(sz))
+		prefixu16(o[n:], mmap16, uint16(size))
 		return o
 	}
 	o, n := ensure(b, 5)
-	prefixu32(o[n:], mmap32, sz)
+	prefixu32(o[n:], mmap32, size)
 	return o
 }
 
-// AppendArrayHeader appends an array header with the given size to b. The size must
-// not be greater than math.MaxUint32.
-func AppendArrayHeader(b []byte, sz uint32) []byte {
+// AppendArrayHeader appends an array header of the given size to b.
+func AppendArrayHeader(b []byte, size uint32) []byte {
 	if sz <= 15 {
-		return append(b, wfixarray(uint8(sz)))
+		return append(b, wfixarray(uint8(size)))
 	}
 	if sz <= math.MaxUint16 {
 		o, n := ensure(b, 3)
-		prefixu16(o[n:], marray16, uint16(sz))
+		prefixu16(o[n:], marray16, uint16(size))
 		return o
 	}
 	o, n := ensure(b, 5)
-	prefixu32(o[n:], marray32, sz)
+	prefixu32(o[n:], marray32, size)
 	return o
 }
 
