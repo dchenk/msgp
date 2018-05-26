@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"io"
 	"strconv"
-	"time"
 )
 
 // UnmarshalAsJSON takes raw MessagePack data and writes it as JSON to w.
@@ -32,7 +31,7 @@ func UnmarshalAsJSON(w io.Writer, msg []byte) ([]byte, error) {
 }
 
 func writeNext(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
-	if len(msg) < 1 {
+	if len(msg) == 0 {
 		return msg, scratch, ErrShortBytes
 	}
 	t := getType(msg[0])
@@ -222,9 +221,7 @@ func rwUintBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error)
 }
 
 func rwFloat32Bytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
-	var f float32
-	var err error
-	f, msg, err = ReadFloat32Bytes(msg)
+	f, msg, err := ReadFloat32Bytes(msg)
 	if err != nil {
 		return msg, scratch, err
 	}
@@ -234,9 +231,7 @@ func rwFloat32Bytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, err
 }
 
 func rwFloat64Bytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
-	var f float64
-	var err error
-	f, msg, err = ReadFloat64Bytes(msg)
+	f, msg, err := ReadFloat64Bytes(msg)
 	if err != nil {
 		return msg, scratch, err
 	}
@@ -246,9 +241,7 @@ func rwFloat64Bytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, err
 }
 
 func rwTimeBytes(w jsWriter, msg []byte, scratch []byte) ([]byte, []byte, error) {
-	var t time.Time
-	var err error
-	t, msg, err = ReadTimeBytes(msg)
+	t, msg, err := ReadTimeBytes(msg)
 	if err != nil {
 		return msg, scratch, err
 	}
