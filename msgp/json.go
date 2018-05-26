@@ -103,10 +103,6 @@ func rwMap(dst jsWriter, src *Reader) (int, error) {
 		return 0, err
 	}
 
-	if sz == 0 {
-		return dst.WriteString("{}")
-	}
-
 	var n int
 
 	err = dst.WriteByte('{')
@@ -115,17 +111,15 @@ func rwMap(dst jsWriter, src *Reader) (int, error) {
 	}
 	n++
 
-	var comma bool
 	for i := uint32(0); i < sz; i++ {
 
-		if comma {
+		if i > 0 {
 			err = dst.WriteByte(',')
 			if err != nil {
 				return n, err
 			}
 			n++
 		}
-		comma = true
 
 		field, err := src.ReadMapKeyPtr()
 		if err != nil {
