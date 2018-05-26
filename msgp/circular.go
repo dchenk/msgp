@@ -13,12 +13,12 @@ type EndlessReader struct {
 	offset int
 }
 
-// NewEndlessReader returns a new endless reader
+// NewEndlessReader returns a new *EndlessReader.
 func NewEndlessReader(b []byte, tb timer) *EndlessReader {
-	return &EndlessReader{tb: tb, data: b, offset: 0}
+	return &EndlessReader{tb: tb, data: b}
 }
 
-// Read implements io.Reader. In practice, it always returns (len(p), nil), although it
+// Read implements io.Reader. In practice, it always returns (len(p), nil) though it
 // fills the supplied slice while the benchmark timer is stopped.
 func (c *EndlessReader) Read(p []byte) (int, error) {
 	c.tb.StopTimer()
