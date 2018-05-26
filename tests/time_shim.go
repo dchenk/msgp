@@ -4,8 +4,8 @@ import "time"
 
 //go:generate msgp
 
-// The following line will generate an error after the code is generated
-// if the generated code doesn't have the identifier timetostr in it.
+// The following "go generate" directive will generate an error after the code is
+// generated if the generated code doesn't have the identifier "timetostr" in it.
 
 //go:generate ./time_shim_search.sh $GOFILE timetostr
 
