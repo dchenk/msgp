@@ -452,10 +452,54 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 // The data is copied to the scratch slice if it's big enough, otherwise a slice is allocated.
 // Possible errors are ErrShortBytes and TypeError.
 func ReadBytesBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
-	return readBytesBytes(b, scratch, false)
+	l := len(b)
+	if l < 1 {
+		return nil, b, ErrShortBytes
+	}
+
+	var dataLen int
+
+	switch lead := b[0]; lead {
+	case mbin8:
+		if l < 2 {
+			return nil, b, ErrShortBytes
+		}
+		dataLen = int(b[1])
+		b = b[2:]
+	case mbin16:
+		if l < 3 {
+			return nil, b, ErrShortBytes
+		}
+		dataLen = int(big.Uint16(b[1:]))
+		b = b[3:]
+	case mbin32:
+		if l < 5 {
+			return nil, b, ErrShortBytes
+		}
+		dataLen = int(big.Uint32(b[1:]))
+		b = b[5:]
+	default:
+		return nil, b, badPrefix(BinType, lead)
+	}
+
+	if len(b) < dataLen {
+		return nil, b, ErrShortBytes
+	}
+
+	if cap(scratch) >= dataLen {
+		scratch = scratch[0:dataLen]
+	} else {
+		scratch = make([]byte, dataLen)
+	}
+
+	copy(scratch, b)
+	return scratch, b[dataLen:], nil
 }
 
-func readBytesBytes(b []byte, scratch []byte, zc bool) ([]byte, []byte, error) {
+// ReadBytesZC extracts a 'bin' object from b without copying. The first slice returned points
+// to the same memory as the input slice, and the second slice is any remaining bytes.
+// Possible errors are ErrShortBytes and TypeError.
+func ReadBytesZC(b []byte) ([]byte, []byte, error) {
 	l := len(b)
 	if l < 1 {
 		return nil, b, ErrShortBytes
@@ -491,25 +535,7 @@ func readBytesBytes(b []byte, scratch []byte, zc bool) ([]byte, []byte, error) {
 	}
 
 	// zero-copy
-	if zc {
-		return b[0:dataLen], b[dataLen:], nil
-	}
-
-	if cap(scratch) >= dataLen {
-		scratch = scratch[0:dataLen]
-	} else {
-		scratch = make([]byte, dataLen)
-	}
-
-	copy(scratch, b)
-	return scratch, b[dataLen:], nil
-}
-
-// ReadBytesZC extracts a 'bin' object from b without copying. The first slice returned points
-// to the same memory as the input slice, and the second slice is any remaining bytes.
-// Possible errors are ErrShortBytes and TypeError.
-func ReadBytesZC(b []byte) ([]byte, []byte, error) {
-	return readBytesBytes(b, nil, true)
+	return b[0:dataLen], b[dataLen:], nil
 }
 
 // ReadExactBytes reads into dst the bytes expected with the next object in b.
