@@ -238,9 +238,7 @@ func ReadFloat32Bytes(b []byte) (float32, []byte, error) {
 }
 
 // ReadBoolBytes tries to read a float64 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a bool)
+// Possible errors are ErrShortBytes and TypeError.
 func ReadBoolBytes(b []byte) (bool, []byte, error) {
 	if len(b) < 1 {
 		return false, b, ErrShortBytes
@@ -329,8 +327,7 @@ func ReadInt32Bytes(b []byte) (int32, []byte, error) {
 }
 
 // ReadInt16Bytes reads an int16 from b and returns the value and any remaining bytes.
-// Possible errors include ErrShortBytes (too few bytes in b), TypeError{} (not an int), and
-// IntOverflow{} (value doesn't fit in an int16).
+// Possible errors are ErrShortBytes, TypeError, and IntOverflow.
 func ReadInt16Bytes(b []byte) (int16, []byte, error) {
 	i, o, err := ReadInt64Bytes(b)
 	if i > math.MaxInt16 || i < math.MinInt16 {
@@ -340,8 +337,7 @@ func ReadInt16Bytes(b []byte) (int16, []byte, error) {
 }
 
 // ReadInt8Bytes tries to read an int16 from b and return the value and the remaining bytes.
-// Possible errors include ErrShortBytes (too few bytes), TypeError{} (not an int), and
-// IntOverflow{} (value doesn't fit in an int8).
+// Possible errors are ErrShortBytes, TypeError, and IntOverflow.
 func ReadInt8Bytes(b []byte) (int8, []byte, error) {
 	i, o, err := ReadInt64Bytes(b)
 	if i > math.MaxInt8 || i < math.MinInt8 {
@@ -351,8 +347,7 @@ func ReadInt8Bytes(b []byte) (int8, []byte, error) {
 }
 
 // ReadIntBytes tries to read an int from b and return the value and the remaining bytes.
-// Possible errors include ErrShortBytes (too few bytes), TypeError{} (not a an int), and
-// IntOverflow{} (value doesn't fit in an int; 32-bit platforms only).
+// Possible errors are ErrShortBytes, TypeError, and IntOverflow (32-bit platforms only).
 func ReadIntBytes(b []byte) (int, []byte, error) {
 	if smallint {
 		i, b, err := ReadInt32Bytes(b)
@@ -408,10 +403,7 @@ func ReadUint64Bytes(b []byte) (uint64, []byte, error) {
 }
 
 // ReadUint32Bytes tries to read a uint32 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a uint)
-// - UintOverflow{} (value too large for uint32)
+// Possible errors are ErrShortBytes, TypeError, and UintOverflow.
 func ReadUint32Bytes(b []byte) (uint32, []byte, error) {
 	v, o, err := ReadUint64Bytes(b)
 	if v > math.MaxUint32 {
@@ -421,10 +413,7 @@ func ReadUint32Bytes(b []byte) (uint32, []byte, error) {
 }
 
 // ReadUint16Bytes tries to read a uint16 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a uint)
-// - UintOverflow{} (value too large for uint16)
+// Possible errors are ErrShortBytes, TypeError, and UintOverflow.
 func ReadUint16Bytes(b []byte) (uint16, []byte, error) {
 	v, o, err := ReadUint64Bytes(b)
 	if v > math.MaxUint16 {
@@ -434,10 +423,7 @@ func ReadUint16Bytes(b []byte) (uint16, []byte, error) {
 }
 
 // ReadUint8Bytes tries to read a uint8 from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a uint)
-// - UintOverflow{} (value too large for uint8)
+// Possible errors are ErrShortBytes, TypeError, and UintOverflow.
 func ReadUint8Bytes(b []byte) (uint8, []byte, error) {
 	v, o, err := ReadUint64Bytes(b)
 	if v > math.MaxUint8 {
@@ -447,10 +433,7 @@ func ReadUint8Bytes(b []byte) (uint8, []byte, error) {
 }
 
 // ReadUintBytes tries to read a uint from b and return the value and the remaining bytes.
-// Possible errors:
-// - ErrShortBytes (too few bytes)
-// - TypeError{} (not a uint)
-// - UintOverflow{} (value too large for uint; 32-bit platforms only)
+// Possible errors are ErrShortBytes, TypeError, and UintOverflow (32-bit platforms only).
 func ReadUintBytes(b []byte) (uint, []byte, error) {
 	if smallint {
 		u, b, err := ReadUint32Bytes(b)
@@ -572,8 +555,7 @@ func ReadExactBytes(b []byte, dst []byte) ([]byte, error) {
 }
 
 // ReadStringZC reads a MessagePack string field without copying. The returned []byte points
-// to the same memory as the input slice. Possible errors are ErrShortBytes (b not long enough)
-// and TypeError{} (object not 'str').
+// to the same memory as the input slice. Possible errors are ErrShortBytes and TypeError.
 func ReadStringZC(b []byte) ([]byte, []byte, error) {
 
 	l := len(b)
@@ -624,7 +606,7 @@ func ReadStringZC(b []byte) ([]byte, []byte, error) {
 }
 
 // ReadStringBytes reads a 'str' object from b and returns its value and any remaining bytes in b.
-// Possible errors are ErrShortBytes, TypeError, and InvalidPrefixError.
+// Possible errors are ErrShortBytes and TypeError.
 func ReadStringBytes(b []byte) (string, []byte, error) {
 	v, o, err := ReadStringZC(b)
 	return string(v), o, err
@@ -632,8 +614,8 @@ func ReadStringBytes(b []byte) (string, []byte, error) {
 
 // ReadStringAsBytes reads a 'str' object into a slice of bytes. The data read is the first slice returned,
 // which may be written to the memory held by the scratch slice if it is large enough (scratch may be nil).
-// The second slice returned contains the remaining bytes in b. Possible errors are ErrShortBytes (b not
-// long enough), TypeError{} (not 'str' type), and InvalidPrefixError (unknown type marker).
+// The second slice returned contains the remaining bytes in b.
+// Possible errors are ErrShortBytes and TypeError.
 func ReadStringAsBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
 	tmp, o, err := ReadStringZC(b)
 	return append(scratch[:0], tmp...), o, err
