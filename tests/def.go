@@ -9,14 +9,13 @@ import (
 
 //go:generate msgp
 
-// All of the struct definitions in this file are fed to the
-// code generator when `make test` is called, followed by an
-// invocation of `go test -v` in this directory. A simple way
-// of testing a struct definition is by adding it to this file.
+// All of the struct definitions in this file are fed to the code generator
+// when `make test` is called. A simple way to test a struct definition is
+// to add it to this file.
 
 type Block [32]byte
 
-// Test edge-cases with compiling size compilation.
+// X tests edge-cases with compiling size compilation.
 type X struct {
 	Values    [32]byte    // should compile to 32*msgp.ByteSize; encoded as Bin
 	ValuesPtr *[32]byte   // check (*)[:] deref
@@ -26,16 +25,17 @@ type X struct {
 	ManyFixed []Fixed
 }
 
-// Test fixed-size struct size compilation.
+// Fixed tests fixed-size structs.
 type Fixed struct {
 	A float64
 	B bool
 }
 
+// TestType tests various kinds of types.
 type TestType struct {
 	F   *float64          `msgp:"float"`
 	Els map[string]string `msgp:"elements"`
-	Obj struct {          // test anonymous struct
+	Obj struct {          // a nested anonymous struct
 		ValueA string `msgp:"value_a"`
 		ValueB []byte `msgp:"value_b"`
 	} `msgp:"object"`
@@ -74,12 +74,14 @@ type TestBench struct {
 
 //msgp:tuple TestFast
 type TestFast struct {
-	Lat, Long, Alt float64 // test inline declaration
+	Lat, Long, Alt float64 // inline declaration
 	Data           []byte
 }
 
-// Test nested aliases
+// FastAlias tests nested aliases.
 type FastAlias TestFast
+
+// AliasContainer wraps a FastAlias.
 type AliasContainer struct {
 	Fast FastAlias
 }
@@ -89,12 +91,14 @@ type IntA int
 type IntB IntA
 type IntC IntB
 
+// TestHidden has an ignored field.
 type TestHidden struct {
 	A   string
 	B   []float64
 	Bad func(string) bool // This results in a warning: field "Bad" unsupported
 }
 
+// Embedded has a recursive pointer.
 type Embedded struct {
 	*Embedded   // Test an embedded field.
 	Children    []Embedded
@@ -102,6 +106,7 @@ type Embedded struct {
 	Other       string
 }
 
+// Things has a few interesting things.
 type Things struct {
 	Cmplx complex64                         `msgp:"complex"` // test slices
 	Vals  []int32                           `msgp:"values"`
@@ -111,8 +116,8 @@ type Things struct {
 	Oext  msgp.RawExtension                 `msgp:"oext,extension"` // test extension reference
 }
 
-// The NoFields type gets methods generated, but it does not have any fields
-// that can get encoded/decoded with MessagePack.
+// NoFields gets methods generated, but it does not have any fields that
+// can get encoded or decoded with MessagePack.
 //
 // This tests whether a "field" variable declaration is made in unmarshal or
 // decode methods for a struct with no encodable/decodable fields. If an unused
@@ -247,9 +252,8 @@ type ArrayConstants struct {
 	ConstantOctal  [07]string
 }
 
-// Ensure non-msgp struct tags work:
-
-type NonMsgStructTags struct {
+// NonMsgpTags tests that non-msgp struct field tags work.
+type NonMsgpTags struct {
 	A      []string `json:"fooJSON" msg:"fooMsgp"`
 	B      string   `json:"barJSON"`
 	C      []string `json:"bazJSON" msg:"-"`
