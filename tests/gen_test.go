@@ -58,8 +58,8 @@ func BenchmarkFastDecode(b *testing.B) {
 }
 
 func (a *TestType) Equal(b *TestType) bool {
-	// compare times, then zero out those
-	// fields, perform a DeepEqual, and restore them
+	// Compare times, then zero out those fields,
+	// perform a DeepEqual, and restore the times.
 	ta, tb := a.Time, b.Time
 	if !ta.Equal(tb) {
 		return false
@@ -70,15 +70,14 @@ func (a *TestType) Equal(b *TestType) bool {
 	return ok
 }
 
-// This covers the following cases:
+// This test covers the following cases:
 //  - Recursive types
 //  - Non-builtin identifiers (and recursive types)
 //  - time.Time
 //  - map[string]string
 //  - anonymous structs
-//
 func Test1EncodeDecode(t *testing.T) {
-	f := 32.00
+	f := 32.1005
 	tt := &TestType{
 		F: &f,
 		Els: map[string]string{
@@ -112,7 +111,7 @@ func Test1EncodeDecode(t *testing.T) {
 	}
 
 	if !tt.Equal(tnew) {
-		t.Logf("in: %v", tt)
+		t.Logf(" in: %v", tt)
 		t.Logf("out: %v", tnew)
 		t.Fatal("objects not equal")
 	}
@@ -132,7 +131,7 @@ func Test1EncodeDecode(t *testing.T) {
 	}
 
 	if !tt.Equal(tanother) {
-		t.Logf("in: %v", tt)
+		t.Logf(" in: %v", tt)
 		t.Logf("out: %v", tanother)
 		t.Fatal("objects not equal")
 	}

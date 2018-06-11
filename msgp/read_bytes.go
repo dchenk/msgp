@@ -452,48 +452,18 @@ func ReadByteBytes(b []byte) (byte, []byte, error) {
 // The data is copied to the scratch slice if it's big enough, otherwise a slice is allocated.
 // Possible errors are ErrShortBytes and TypeError.
 func ReadBytesBytes(b []byte, scratch []byte) ([]byte, []byte, error) {
-	l := len(b)
-	if l < 1 {
-		return nil, b, ErrShortBytes
+	data, remaining, err := ReadBytesZC(b)
+	if err != nil {
+		return nil, b, err
 	}
-
-	var dataLen int
-
-	switch lead := b[0]; lead {
-	case mbin8:
-		if l < 2 {
-			return nil, b, ErrShortBytes
-		}
-		dataLen = int(b[1])
-		b = b[2:]
-	case mbin16:
-		if l < 3 {
-			return nil, b, ErrShortBytes
-		}
-		dataLen = int(big.Uint16(b[1:]))
-		b = b[3:]
-	case mbin32:
-		if l < 5 {
-			return nil, b, ErrShortBytes
-		}
-		dataLen = int(big.Uint32(b[1:]))
-		b = b[5:]
-	default:
-		return nil, b, badPrefix(BinType, lead)
-	}
-
-	if len(b) < dataLen {
-		return nil, b, ErrShortBytes
-	}
-
-	if cap(scratch) >= dataLen {
-		scratch = scratch[0:dataLen]
+	l := len(data)
+	if cap(scratch) >= l {
+		scratch = scratch[0:l]
 	} else {
-		scratch = make([]byte, dataLen)
+		scratch = make([]byte, l)
 	}
-
-	copy(scratch, b)
-	return scratch, b[dataLen:], nil
+	copy(scratch, data)
+	return scratch, remaining, nil
 }
 
 // ReadBytesZC extracts a 'bin' object from b without copying. The first slice returned points
