@@ -13,6 +13,7 @@ func ExampleEncode() {
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 	var theMessage msgp.Number
 	theMessage.AsInt(457)
 	err = msgp.Encode(file, &theMessage)
@@ -22,11 +23,12 @@ func ExampleEncode() {
 }
 
 func ExampleDecode() {
-	// Read the message in a file:
+	// Read a message from a file:
 	file, err := os.Open("my-message")
 	if err != nil {
 		panic(err)
 	}
+	defer file.Close()
 	var theMessage msgp.Number
 	err = msgp.Decode(file, &theMessage)
 	if err != nil {
