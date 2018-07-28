@@ -1,9 +1,10 @@
 # MessagePack Code Generator and Library for Go
 [![Build Status](https://travis-ci.org/dchenk/msgp.svg?branch=master)](https://travis-ci.org/dchenk/msgp) 
 [![Go Report Card](https://goreportcard.com/badge/github.com/dchenk/msgp)](https://goreportcard.com/badge/github.com/dchenk/msgp)
+[![GoDoc](https://godoc.org/github.com/dchenk/msgp?status.svg)](https://godoc.org/github.com/dchenk/msgp/msgp)
 
 
-This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](http://github.com/dchenk/msgp/wiki)
+This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](https://github.com/dchenk/msgp/wiki)
 or at [msgpack.org](https://msgpack.org).
 
 ### Top Features
@@ -27,7 +28,9 @@ In a Go code source file, include the following directive:
 //go:generate msgp
 ```
 
-The `msgp` command will tell `go generate` to generate serialization and deserialization methods for all exported types in the file.
+Within the directory with the file where you placed that directive, run `go generate`.
+
+The `msgp` command will tell the `go generate` tool to generate serialization and deserialization methods (functions) for all exported types in the file. These custom-built functions enable you to use package [`msgp`](https://godoc.org/github.com/dchenk/msgp/msgp) to efficiently encode objects to and from the MessagePack format.
 
 You can [read more about the code generation options here](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator).
 
@@ -104,7 +107,7 @@ and [here](https://github.com/alecthomas/go_serialization_benchmarks).
 
 ## Credits
 
-This repository is a fork of [github.com/tinylib/msgp](https://github.com/tinylib/msgp).
+This repository is a fork of github.com/tinylib/msgp.
 
 Differences between this tool and tinylib/msgp:
 - Here we have [regular expression matching](https://github.com/dchenk/msgp/wiki/Using-the-Code-Generator#matching-type-names) for type
