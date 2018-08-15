@@ -7,6 +7,8 @@
 This is a code generation tool and serialization library for MessagePack. You can read more about MessagePack [in the wiki](https://github.com/dchenk/msgp/wiki)
 or at [msgpack.org](https://msgpack.org).
 
+**This library is no longer being maintained. You should be using [Protocol Buffers](https://developers.google.com/protocol-buffers/) for binary data serialization**
+
 ### Top Features
 
 - Use Go as your schema language
